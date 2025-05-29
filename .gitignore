@@ -4,6 +4,7 @@
 .pio/
 .vscode/
 build/
+#*.bin
 *.elf
 *.map
 
