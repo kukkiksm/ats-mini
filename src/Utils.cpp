@@ -19,12 +19,12 @@ static bool sleep_on = false;
 static bool ssbLoaded = false;
 
 // Time
-static bool clockHasBeenSet  = false;
-static uint32_t clockTimer   = 0;
-static uint32_t clockSeconds = 0;
-static uint32_t clockMinutes = 0;
-static uint32_t clockHours   = 0;
-static char     clockText[8] = {0};
+static bool clockHasBeenSet = false;
+static uint32_t clockTimer  = 0;
+static uint8_t clockSeconds = 0;
+static uint8_t clockMinutes = 0;
+static uint8_t clockHours   = 0;
+static char    clockText[8] = {0};
 
 //
 // Get firmware version and build time, as a string
@@ -122,7 +122,7 @@ bool muteOn(int x)
 //
 void tempMuteOn(bool x)
 {
-  if(!muteOn())
+  if(!muteOn(2))
   {
     if(x)
     {
@@ -193,6 +193,7 @@ bool sleepOn(int x)
       rtc_gpio_pulldown_dis((gpio_num_t)ENCODER_PUSH_BUTTON);
       rtc_gpio_deinit((gpio_num_t)ENCODER_PUSH_BUTTON);
       pinMode(ENCODER_PUSH_BUTTON, INPUT_PULLUP);
+      if(squelchCutoff) tempMuteOn(true);
       sleepOn(false);
       // Enable WiFi
       netInit(wifiModeIdx, false);
@@ -219,12 +220,28 @@ bool sleepOn(int x)
 // Set and count time
 //
 
+bool clockAvailable()
+{
+  return(clockHasBeenSet);
+}
+
 const char *clockGet()
 {
   if(switchThemeEditor())
     return("00:00");
   else
     return(clockHasBeenSet? clockText : NULL);
+}
+
+bool clockGetHM(uint8_t *hours, uint8_t *minutes)
+{
+  if(!clockHasBeenSet) return(false);
+  else
+  {
+    *hours   = clockHours;
+    *minutes = clockMinutes;
+    return(true);
+  }
 }
 
 void clockReset()
@@ -258,6 +275,7 @@ bool clockSet(uint8_t hours, uint8_t minutes, uint8_t seconds)
     clockMinutes = minutes;
     clockSeconds = seconds;
     clockRefreshTime();
+    identifyFrequency(currentFrequency + currentBFO / 1000);
     return(true);
   }
 

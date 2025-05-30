@@ -39,12 +39,17 @@
 #define CMD_SCROLL    0x2900 // |
 #define CMD_SLEEP     0x2A00 // |
 #define CMD_SLEEPMODE 0x2B00 // |
-#define CMD_WIFIMODE  0x2C00 // |
-#define CMD_ABOUT     0x2D00 //-+
+#define CMD_LOADEIBI  0x2C00 // |
+#define CMD_WIFIMODE  0x2D00 // |
+#define CMD_ABOUT     0x2E00 //-+
 
 // UI Layouts
 #define UI_DEFAULT  0
 #define UI_SMETER   1
+
+// Seek modes
+#define SEEK_DEFAULT  0
+#define SEEK_SCHEDULE 1
 
 //
 // Data Types
@@ -92,6 +97,7 @@ static inline bool isSettingsMode(uint16_t cmd)
   return((cmd>=CMD_SETTINGS) && (cmd<CMD_ABOUT));
 }
 
+uint8_t seekMode(bool toggle = false);
 void drawSideBar(uint16_t cmd, int x, int y, int sx);
 bool doSideBar(uint16_t cmd, int dir);
 void doSelectDigit(int dir);

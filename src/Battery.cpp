@@ -1,5 +1,6 @@
 #include "Common.h"
 #include "Themes.h"
+#include "Utils.h"
 
 #define VBAT_MON  4                 // GPIO04 -- Battery Monitor PIN
 

@@ -10,20 +10,23 @@
 #include "Menu.h"
 #include "Storage.h"
 #include "Themes.h"
+#include "Utils.h"
+#include "EIBI.h"
 #include "Globals.h"
 
 // SI473/5 and UI
-#define MIN_ELAPSED_TIME         5  // 300
-#define MIN_ELAPSED_RSSI_TIME  200  // RSSI check uses IN_ELAPSED_RSSI_TIME * 6 = 1.2s
-#define ELAPSED_COMMAND      10000  // time to turn off the last command controlled by encoder. Time to goes back to the VFO control // G8PTN: Increased time and corrected comment
-#define DEFAULT_VOLUME          35  // change it for your favorite sound volume
-#define DEFAULT_SLEEP            0  // Default sleep interval, range = 0 (off) to 255 in steps of 5
-#define STRENGTH_CHECK_TIME   1500  // Not used
-#define RDS_CHECK_TIME         250  // Increased from 90
-#define SEEK_TIMEOUT        600000  // Max seek timeout (ms)
-#define NTP_CHECK_TIME       60000  // NTP time refresh period (ms)
-#define BACKGROUND_REFRESH_TIME 5000    // Background screen refresh time. Covers the situation where there are no other events causing a refresh
-#define TUNE_HOLDOFF_TIME       90  // Timer to hold off display whilst tuning
+#define MIN_ELAPSED_TIME 5           // 300
+#define MIN_ELAPSED_RSSI_TIME 200    // RSSI check uses IN_ELAPSED_RSSI_TIME * 6 = 1.2s
+#define ELAPSED_COMMAND 10000        // time to turn off the last command controlled by encoder. Time to goes back to the VFO control // G8PTN: Increased time and corrected comment
+#define DEFAULT_VOLUME 35            // change it for your favorite sound volume
+#define DEFAULT_SLEEP 0              // Default sleep interval, range = 0 (off) to 255 in steps of 5
+#define STRENGTH_CHECK_TIME 1500     // Not used
+#define RDS_CHECK_TIME 250           // Increased from 90
+#define SEEK_TIMEOUT 600000          // Max seek timeout (ms)
+#define NTP_CHECK_TIME 60000         // NTP time refresh period (ms)
+#define SCHEDULE_CHECK_TIME 2000     // How often to identify the same frequency (ms)
+#define BACKGROUND_REFRESH_TIME 5000 // Background screen refresh time. Covers the situation where there are no other events causing a refresh
+#define TUNE_HOLDOFF_TIME 90         // Timer to hold off display whilst tuning
 
 // =================================
 // CONSTANTS AND VARIABLES
@@ -34,8 +37,8 @@ uint8_t disableAgc = 0;
 int8_t agcNdx = 0;
 int8_t softMuteMaxAttIdx = 4;
 
-bool seekStop = false;        // G8PTN: Added flag to abort seeking on rotary encoder detection
-bool pushAndRotate = false;   // Push and rotate is active, ignore the long press
+bool seekStop = false;      // G8PTN: Added flag to abort seeking on rotary encoder detection
+bool pushAndRotate = false; // Push and rotate is active, ignore the long press
 
 long elapsedRSSI = millis();
 long elapsedButton = millis();
@@ -43,57 +46,58 @@ long elapsedButton = millis();
 long lastStrengthCheck = millis();
 long lastRDSCheck = millis();
 long lastNTPCheck = millis();
+long lastScheduleCheck = millis();
 
 long elapsedCommand = millis();
 volatile int encoderCount = 0;
 uint16_t currentFrequency;
 
 // AGC/ATTN index per mode (FM/AM/SSB)
-int8_t FmAgcIdx = 0;                    // Default FM  AGGON  : Range = 0 to 37, 0 = AGCON, 1 - 27 = ATTN 0 to 26
-int8_t AmAgcIdx = 0;                    // Default AM  AGCON  : Range = 0 to 37, 0 = AGCON, 1 - 37 = ATTN 0 to 36
-int8_t SsbAgcIdx = 0;                   // Default SSB AGCON  : Range = 0 to 1,  0 = AGCON,      1 = ATTN 0
+int8_t FmAgcIdx = 0;  // Default FM  AGGON  : Range = 0 to 37, 0 = AGCON, 1 - 27 = ATTN 0 to 26
+int8_t AmAgcIdx = 0;  // Default AM  AGCON  : Range = 0 to 37, 0 = AGCON, 1 - 37 = ATTN 0 to 36
+int8_t SsbAgcIdx = 0; // Default SSB AGCON  : Range = 0 to 1,  0 = AGCON,      1 = ATTN 0
 
 // AVC index per mode (AM/SSB)
-int8_t AmAvcIdx = 48;                   // Default AM  = 48 (as per AN332), range = 12 to 90 in steps of 2
-int8_t SsbAvcIdx = 48;                  // Default SSB = 48, range = 12 to 90 in steps of 2
+int8_t AmAvcIdx = 48;  // Default AM  = 48 (as per AN332), range = 12 to 90 in steps of 2
+int8_t SsbAvcIdx = 48; // Default SSB = 48, range = 12 to 90 in steps of 2
 
 // SoftMute index per mode (AM/SSB)
-int8_t AmSoftMuteIdx = 4;               // Default AM  = 4, range = 0 to 32
-int8_t SsbSoftMuteIdx = 4;              // Default SSB = 4, range = 0 to 32
+int8_t AmSoftMuteIdx = 4;  // Default AM  = 4, range = 0 to 32
+int8_t SsbSoftMuteIdx = 4; // Default SSB = 4, range = 0 to 32
 
 // Menu options
-uint8_t volume = DEFAULT_VOLUME;        // Volume, range = 0 (muted) - 63
-uint8_t currentSquelch = 0;             // Squelch, range = 0 (disabled) - 127
-bool squelchCutoff = false;             // True if the Squelch cutoff is in effect
-uint8_t FmRegionIdx = 0;                // FM Region
+uint8_t volume = DEFAULT_VOLUME; // Volume, range = 0 (muted) - 63
+uint8_t currentSquelch = 0;      // Squelch, range = 0 (disabled) - 127
+bool squelchCutoff = false;      // True if the Squelch cutoff is in effect
+uint8_t FmRegionIdx = 0;         // FM Region
 
-uint16_t currentBrt = 130;              // Display brightness, range = 10 to 255 in steps of 5
-uint16_t currentSleep = DEFAULT_SLEEP;  // Display sleep timeout, range = 0 to 255 in steps of 5
-long elapsedSleep = millis();           // Display sleep timer
-bool zoomMenu = false;                  // Display zoomed menu item
-int8_t scrollDirection = 1;             // Menu scroll direction
+uint16_t currentBrt = 130;             // Display brightness, range = 10 to 255 in steps of 5
+uint16_t currentSleep = DEFAULT_SLEEP; // Display sleep timeout, range = 0 to 255 in steps of 5
+long elapsedSleep = millis();          // Display sleep timer
+bool zoomMenu = false;                 // Display zoomed menu item
+int8_t scrollDirection = 1;            // Menu scroll direction
 
 // Background screen refresh
-uint32_t background_timer = millis();   // Background screen refresh timer.
-uint32_t tuning_timer = millis();       // Tuning hold off timer.
-bool tuning_flag = false;               // Flag to indicate tuning
+uint32_t background_timer = millis(); // Background screen refresh timer.
+uint32_t tuning_timer = millis();     // Tuning hold off timer.
+bool tuning_flag = false;             // Flag to indicate tuning
 
 //
 // Current parameters
 //
-uint16_t currentCmd  = CMD_NONE;
-uint8_t  currentMode = FM;
-int16_t  currentBFO  = 0;
+uint16_t currentCmd = CMD_NONE;
+uint8_t currentMode = FM;
+int16_t currentBFO = 0;
 
-uint8_t  rssi = 0;
-uint8_t  snr  = 0;
+uint8_t rssi = 0;
+uint8_t snr = 0;
 
 //
 // Devices
 //
-Rotary encoder  = Rotary(ENCODER_PIN_B, ENCODER_PIN_A);
+Rotary encoder = Rotary(ENCODER_PIN_B, ENCODER_PIN_A);
 ButtonTracker pb1 = ButtonTracker();
-TFT_eSPI tft    = TFT_eSPI();
+TFT_eSPI tft = TFT_eSPI();
 TFT_eSprite spr = TFT_eSprite(&tft);
 SI4735_fixed rx;
 
@@ -106,6 +110,9 @@ void setup()
 {
   // Enable serial port
   Serial.begin(115200);
+
+  // Initialize flash file system
+  diskInit();
 
   // Encoder pins. Enable internal pull-ups
   pinMode(ENCODER_PUSH_BUTTON, INPUT_PULLUP);
@@ -124,6 +131,8 @@ void setup()
   // The line below may be necessary to setup I2C pins on ESP32
   Wire.begin(ESP32_I2C_SDA, ESP32_I2C_SCL);
 
+  // TFT display brightness control (PWM)
+  // Note: At brightness levels below 100%, switching from the PWM may cause power spikes and/or RFI
   ledcSetup(0, 16000, 8);       // Port 0, 16kHz, 8-bit
   ledcAttachPin(PIN_LCD_BL, 0); // Pin assignment
   ledcWrite(0, 255);            // Default value 255 = 100%)
@@ -134,7 +143,7 @@ void setup()
 
   // Detect and fix the mirrored & inverted display
   // https://github.com/esp32-si4732/ats-mini/issues/41
-  if(tft.readcommand8(ST7789_RDDID, 3) == 0x93)
+  if (tft.readcommand8(ST7789_RDDID, 3) == 0x93)
   {
     tft.invertDisplay(0);
     tft.writecommand(TFT_MADCTL);
@@ -150,19 +159,21 @@ void setup()
 
   // Press and hold Encoder button to force an EEPROM reset
   // Note: EEPROM reset is recommended after firmware updates
-  if(digitalRead(ENCODER_PUSH_BUTTON)==LOW)
+  if (digitalRead(ENCODER_PUSH_BUTTON) == LOW)
   {
     netClearPreferences();
     eepromInvalidate();
+    diskInit(true);
 
-    ledcWrite(PIN_LCD_BL, 255);       // Default value 255 = 100%
+    ledcWrite(PIN_LCD_BL, 255); // Default value 255 = 100%
     tft.setTextSize(2);
     tft.setTextColor(TH.text, TH.bg);
     tft.println(getVersion(true));
     tft.println();
     tft.setTextColor(TH.text_warn, TH.bg);
     tft.print("EEPROM Resetting");
-    while(digitalRead(ENCODER_PUSH_BUTTON) == LOW) delay(100);
+    while (digitalRead(ENCODER_PUSH_BUTTON) == LOW)
+      delay(100);
   }
 
   // Check for SI4732 connected on I2C interface
@@ -171,13 +182,14 @@ void setup()
 
   // Looks for the I2C bus address and set it.  Returns 0 if error
   int16_t si4735Addr = rx.getDeviceI2CAddress(RESET_PIN);
-  if(!si4735Addr)
+  if (!si4735Addr)
   {
-    ledcWrite(PIN_LCD_BL, 255);       // Default value 255 = 100%
+    ledcWrite(PIN_LCD_BL, 255); // Default value 255 = 100%
     tft.setTextSize(2);
     tft.setTextColor(TH.text_warn, TH.bg);
     tft.println("Si4732 not detected");
-    while(1);
+    while (1)
+      ;
   }
 
   rx.setup(RESET_PIN, MW_BAND_TYPE);
@@ -196,7 +208,7 @@ void setup()
   digitalWrite(PIN_AMP_EN, HIGH);
 
   // If EEPROM contents are ok...
-  if(eepromVerify())
+  if (eepromVerify())
   {
     // Load configuration from EEPROM
     eepromLoadConfig();
@@ -215,14 +227,16 @@ void setup()
   rx.setMaxSeekTime(SEEK_TIMEOUT);
 
   // Show help screen on first run
-  if(eepromFirstRun())
+  if (eepromFirstRun())
   {
     // Clear screen buffer
     spr.fillSprite(TH.bg);
     ledcWrite(PIN_LCD_BL, currentBrt);
     drawAboutHelp(0);
-    while(digitalRead(ENCODER_PUSH_BUTTON) != LOW) delay(100);
-    while(digitalRead(ENCODER_PUSH_BUTTON) == LOW) delay(100);
+    while (digitalRead(ENCODER_PUSH_BUTTON) != LOW)
+      delay(100);
+    while (digitalRead(ENCODER_PUSH_BUTTON) == LOW)
+      delay(100);
   }
 
   // Draw display for the first time
@@ -250,12 +264,11 @@ ICACHE_RAM_ATTR void rotaryEncoder()
 {
   // Rotary encoder events
   uint8_t encoderStatus = encoder.process();
-  if(encoderStatus)
+  if (encoderStatus)
   {
-    encoderCount = encoderStatus==DIR_CW? 1 : -1;
+    encoderCount = encoderStatus == DIR_CW ? 1 : -1;
     seekStop = true;
     textStop = true;
-    lastConnectMillis2 = millis(); // ✅ เพิ่มเพื่อรีเซต timer
   }
 }
 
@@ -269,7 +282,7 @@ void useBand(const Band *band)
   currentMode = band->bandMode;
   currentBFO = 0;
 
-  if(band->bandMode==FM)
+  if (band->bandMode == FM)
   {
     rx.setFM(band->minimumFreq, band->maximumFreq, band->currentFreq, getCurrentStep()->step);
     // rx.setTuneFrequencyAntennaCapacitor(0);
@@ -278,23 +291,23 @@ void useBand(const Band *band)
     // More sensitive seek thresholds
     // https://github.com/pu2clr/SI4735/issues/7#issuecomment-810963604
     rx.setSeekFmRssiThreshold(5); // default is 20
-    rx.setSeekFmSNRThreshold(3); // default is 3
+    rx.setSeekFmSNRThreshold(3);  // default is 3
 
     rx.setFMDeEmphasis(fmRegions[FmRegionIdx].value);
     rx.RdsInit();
     rx.setRdsConfig(1, 2, 2, 2, 2);
-    rx.setGpioCtl(1, 0, 0);   // G8PTN: Enable GPIO1 as output
-    rx.setGpio(0, 0, 0);      // G8PTN: Set GPIO1 = 0
+    rx.setGpioCtl(1, 0, 0); // G8PTN: Enable GPIO1 as output
+    rx.setGpio(0, 0, 0);    // G8PTN: Set GPIO1 = 0
   }
   else
   {
-    if(band->bandMode==AM)
+    if (band->bandMode == AM)
     {
       rx.setAM(band->minimumFreq, band->maximumFreq, band->currentFreq, getCurrentStep()->step);
       // More sensitive seek thresholds
       // https://github.com/pu2clr/SI4735/issues/7#issuecomment-810963604
       rx.setSeekAmRssiThreshold(15); // default is 25
-      rx.setSeekAmSNRThreshold(5); // default is 5
+      rx.setSeekAmSNRThreshold(5);   // default is 5
     }
     else
     {
@@ -303,7 +316,7 @@ void useBand(const Band *band)
       // G8PTN: Always enabled
       rx.setSSBAutomaticVolumeControl(1);
       // G8PTN: Commented out
-      //rx.setSsbSoftMuteMaxAttenuation(softMuteMaxAttIdx);
+      // rx.setSsbSoftMuteMaxAttenuation(softMuteMaxAttIdx);
       // To move frequency forward, need to move the BFO backwards
       rx.setSSBBfo(-(currentBFO + band->bandCal));
     }
@@ -331,21 +344,23 @@ void useBand(const Band *band)
   delay(100);
   // Clear signal strength readings
   rssi = 0;
-  snr  = 0;
+  snr = 0;
 }
 
 // This function is called by the seek function process.
 bool checkStopSeeking()
 {
   // Returns true if the user rotates the encoder
-  if(seekStop) return true;
+  if (seekStop)
+    return true;
 
   // Checking isPressed without debouncing because this callback
   // is not invoked often enough to register a click
-  if(pb1.update(digitalRead(ENCODER_PUSH_BUTTON) == LOW, 0).isPressed)
+  if (pb1.update(digitalRead(ENCODER_PUSH_BUTTON) == LOW, 0).isPressed)
   {
     // Wait till the button is released, otherwise the main loop will register a click
-    while (pb1.update(digitalRead(ENCODER_PUSH_BUTTON) == LOW).isPressed) delay(100);
+    while (pb1.update(digitalRead(ENCODER_PUSH_BUTTON) == LOW).isPressed)
+      delay(100);
     return true;
   };
   return false;
@@ -367,35 +382,38 @@ bool updateBFO(int newBFO, bool wrap)
   int newFreq = currentFrequency;
 
   // No BFO outside SSB modes
-  if(!isSSB()) newBFO = 0;
+  if (!isSSB())
+    newBFO = 0;
 
   // If new BFO exceeds allowed bounds...
-  if(newBFO > MAX_BFO || newBFO < -MAX_BFO)
+  if (newBFO > MAX_BFO || newBFO < -MAX_BFO)
   {
     // Compute correction
     int fCorrect = (newBFO / MAX_BFO) * MAX_BFO;
     // Correct new frequency and BFO
     newFreq += fCorrect / 1000;
-    newBFO  -= fCorrect;
+    newBFO -= fCorrect;
   }
 
   // Do not let new frequency exceed band limits
   int f = newFreq * 1000 + newBFO;
-  if(f < band->minimumFreq * 1000)
+  if (f < band->minimumFreq * 1000)
   {
-    if(!wrap) return false;
+    if (!wrap)
+      return false;
     newFreq = band->maximumFreq;
-    newBFO  = 0;
+    newBFO = 0;
   }
-  else if(f > band->maximumFreq * 1000)
+  else if (f > band->maximumFreq * 1000)
   {
-    if(!wrap) return false;
+    if (!wrap)
+      return false;
     newFreq = band->minimumFreq;
-    newBFO  = 0;
+    newBFO = 0;
   }
 
   // If need to change frequency...
-  if(newFreq != currentFrequency)
+  if (newFreq != currentFrequency)
   {
     // Apply new frequency
     rx.setFrequency(newFreq);
@@ -425,20 +443,25 @@ bool updateFrequency(int newFreq, bool wrap)
   Band *band = getCurrentBand();
 
   // Do not let new frequency exceed band limits
-  if (newFreq < band->minimumFreq) {
-    if (!wrap) return false;
+  if (newFreq < band->minimumFreq)
+  {
+    if (!wrap)
+      return false;
     newFreq = band->maximumFreq;
-  } else if (newFreq > band->maximumFreq) {
-    if (!wrap) return false;
+  }
+  else if (newFreq > band->maximumFreq)
+  {
+    if (!wrap)
+      return false;
     newFreq = band->minimumFreq;
-
   }
 
   // Set new frequency
   rx.setFrequency(newFreq);
 
   // Clear BFO, if present
-  if(currentBFO) updateBFO(0, true);
+  if (currentBFO)
+    updateBFO(0, true);
 
   // Update current frequency
   currentFrequency = rx.getFrequency();
@@ -448,28 +471,42 @@ bool updateFrequency(int newFreq, bool wrap)
   return true;
 }
 
-
 //
 // Handle encoder rotation in seek mode
 //
 bool doSeek(int8_t dir)
 {
-  if(isSSB())
+  if (seekMode() == SEEK_DEFAULT)
   {
+    if (isSSB())
+    {
 #ifdef ENABLE_HOLDOFF
-    // Tuning timer to hold off (FM/AM) display updates
-    tuning_flag = true;
-    tuning_timer = millis();
+      // Tuning timer to hold off (FM/AM) display updates
+      tuning_flag = true;
+      tuning_timer = millis();
 #endif
 
-    updateBFO(currentBFO + dir * getCurrentStep(true)->step, true);
+      updateBFO(currentBFO + dir * getCurrentStep(true)->step, true);
+    }
+    else
+    {
+      // G8PTN: Flag is set by rotary encoder and cleared on seek entry
+      seekStop = false;
+      rx.seekStationProgress(showFrequencySeek, checkStopSeeking, dir > 0 ? 1 : 0);
+      updateFrequency(rx.getFrequency(), true);
+    }
   }
-  else
+  else if (seekMode() == SEEK_SCHEDULE && dir)
   {
-    // G8PTN: Flag is set by rotary encoder and cleared on seek entry
-    seekStop = false;
-    rx.seekStationProgress(showFrequencySeek, checkStopSeeking, dir>0? 1 : 0);
-    updateFrequency(rx.getFrequency(), true);
+    uint8_t hour, minute;
+    // Clock is valid because the above seekMode() call checks that
+    clockGetHM(&hour, &minute);
+
+    size_t offset = -1;
+    const StationSchedule *schedule = dir > 0 ? eibiNext(currentFrequency + currentBFO / 1000, hour, minute, &offset) : eibiPrev(currentFrequency + currentBFO / 1000, hour, minute, &offset);
+
+    if (schedule)
+      updateFrequency(schedule->freq, false);
   }
 
   // Clear current station name and information
@@ -477,7 +514,7 @@ bool doSeek(int8_t dir)
   // Check for named frequencies
   identifyFrequency(currentFrequency + currentBFO / 1000);
   // Will need a redraw
-  return(true);
+  return (true);
 }
 
 //
@@ -488,7 +525,7 @@ bool doTune(int8_t dir)
   //
   // SSB tuning
   //
-  if(isSSB())
+  if (isSSB())
   {
 #ifdef ENABLE_HOLDOFF
     // Tuning timer to hold off (SSB) display updates
@@ -498,7 +535,8 @@ bool doTune(int8_t dir)
 
     uint32_t step = getCurrentStep()->step;
     uint32_t stepAdjust = (currentFrequency * 1000 + currentBFO) % step;
-    step = !stepAdjust? step : dir>0? step - stepAdjust : stepAdjust;
+    step = !stepAdjust ? step : dir > 0 ? step - stepAdjust
+                                        : stepAdjust;
 
     updateBFO(currentBFO + dir * step, true);
   }
@@ -517,7 +555,8 @@ bool doTune(int8_t dir)
     // G8PTN: Used in place of rx.frequencyUp() and rx.frequencyDown()
     uint16_t step = getCurrentStep()->step;
     uint16_t stepAdjust = currentFrequency % step;
-    step = !stepAdjust? step : dir>0? step - stepAdjust : stepAdjust;
+    step = !stepAdjust ? step : dir > 0 ? step - stepAdjust
+                                        : stepAdjust;
 
     // Tune to a new frequency
     updateFrequency(currentFrequency + step * dir, true);
@@ -528,7 +567,7 @@ bool doTune(int8_t dir)
   // Check for named frequencies
   identifyFrequency(currentFrequency + currentBFO / 1000);
   // Will need a redraw
-  return(true);
+  return (true);
 }
 
 //
@@ -539,7 +578,7 @@ bool doDigit(int8_t dir)
   bool updated = false;
 
   // SSB tuning
-  if(isSSB())
+  if (isSSB())
   {
 #ifdef ENABLE_HOLDOFF
     // Tuning timer to hold off (SSB) display updates
@@ -565,7 +604,8 @@ bool doDigit(int8_t dir)
     updated = updateFrequency(currentFrequency + getFreqInputStep() * dir, false);
   }
 
-  if (updated) {
+  if (updated)
+  {
     // Clear current station name and information
     clearStationInfo();
     // Check for named frequencies
@@ -573,30 +613,34 @@ bool doDigit(int8_t dir)
   }
 
   // Will need a redraw
-  return(updated);
+  return (updated);
 }
-
 
 bool clickFreq(bool shortPress)
 {
-  if (shortPress) {
+  if (shortPress)
+  {
     bool updated = false;
 
-     // SSB tuning
-     if(isSSB()) {
-       updated = updateBFO(currentBFO - (currentFrequency * 1000 + currentBFO) % getFreqInputStep(), false);
-     } else {
-       // Normal tuning
-       updated = updateFrequency(currentFrequency - currentFrequency % getFreqInputStep(), false);
-     }
+    // SSB tuning
+    if (isSSB())
+    {
+      updated = updateBFO(currentBFO - (currentFrequency * 1000 + currentBFO) % getFreqInputStep(), false);
+    }
+    else
+    {
+      // Normal tuning
+      updated = updateFrequency(currentFrequency - currentFrequency % getFreqInputStep(), false);
+    }
 
-     if (updated) {
-       // Clear current station name and information
-       clearStationInfo();
-       // Check for named frequencies
-       identifyFrequency(currentFrequency + currentBFO / 1000);
-     }
-     return true;
+    if (updated)
+    {
+      // Clear current station name and information
+      clearStationInfo();
+      // Check for named frequencies
+      identifyFrequency(currentFrequency + currentBFO / 1000);
+    }
+    return true;
   }
   return false;
 }
@@ -611,36 +655,36 @@ bool processRssiSnr()
   int newSNR = rx.getCurrentSNR();
 
   // Apply squelch if the volume is not muted
-  if(currentSquelch && currentSquelch <= 127)
+  if (currentSquelch && currentSquelch <= 127)
   {
-    if(newRSSI >= currentSquelch && squelchCutoff)
+    if (newRSSI >= currentSquelch && squelchCutoff)
     {
       tempMuteOn(false);
       squelchCutoff = false;
     }
-    else if(newRSSI < currentSquelch && !squelchCutoff)
+    else if (newRSSI < currentSquelch && !squelchCutoff)
     {
       tempMuteOn(true);
       squelchCutoff = true;
     }
   }
-  else if(squelchCutoff)
+  else if (squelchCutoff)
   {
     tempMuteOn(false);
     squelchCutoff = false;
   }
 
   // G8PTN: Based on 1.2s interval, update RSSI & SNR
-  if(!(updateCounter++ & 7))
+  if (!(updateCounter++ & 7))
   {
     // Show RSSI status only if this condition has changed
-    if(newRSSI != rssi)
+    if (newRSSI != rssi)
     {
       rssi = newRSSI;
       needRedraw = true;
     }
     // Show SNR status only if this condition has changed
-    if(newSNR != snr)
+    if (newSNR != snr)
     {
       snr = newSNR;
       needRedraw = true;
@@ -649,7 +693,9 @@ bool processRssiSnr()
   return needRedraw;
 }
 
-
+//
+// Main event loop
+//
 void loop()
 {
   uint32_t currentTime = millis();
@@ -662,46 +708,49 @@ void loop()
   remoteTickTime();
 
   // Receive and execute serial command
-  if(Serial.available()>0)
+  if (Serial.available() > 0)
   {
     int revent = remoteDoCommand(Serial.read());
     needRedraw |= !!(revent & REMOTE_CHANGED);
     pb1st.wasClicked |= !!(revent & REMOTE_CLICK);
     int direction = revent >> REMOTE_DIRECTION;
-    encoderCount = direction? direction : encoderCount;
-    if(revent & REMOTE_EEPROM) eepromRequestSave();
+    encoderCount = direction ? direction : encoderCount;
+    if (revent & REMOTE_EEPROM)
+      eepromRequestSave();
   }
 #endif
 
   // Block encoder rotation when in the locked sleep mode
-  if(encoderCount && sleepOn() && sleepModeIdx==SLEEP_LOCKED) encoderCount = 0;
+  if (encoderCount && sleepOn() && sleepModeIdx == SLEEP_LOCKED)
+    encoderCount = 0;
 
   // Activate push and rotate mode (can span multiple loop iterations until the button is released)
-  if (encoderCount && pb1st.isPressed) pushAndRotate = true;
+  if (encoderCount && pb1st.isPressed)
+    pushAndRotate = true;
 
   // If push and rotate mode is active...
-  if(pushAndRotate)
+  if (pushAndRotate)
   {
     // If encoder has been rotated
-    if(encoderCount)
+    if (encoderCount)
     {
-      switch(currentCmd)
+      switch (currentCmd)
       {
-        case CMD_NONE:
-          // Activate frequency input mode
-          currentCmd = CMD_FREQ;
-          needRedraw = true;
-          break;
-        case CMD_FREQ:
-          // Select digit
-          doSelectDigit(encoderCount);
-          needRedraw = true;
-          break;
-        case CMD_SEEK:
-          // Normal tuning in seek mode
-          needRedraw |= doTune(encoderCount);
-          eepromRequestSave();
-          break;
+      case CMD_NONE:
+        // Activate frequency input mode
+        currentCmd = CMD_FREQ;
+        needRedraw = true;
+        break;
+      case CMD_FREQ:
+        // Select digit
+        doSelectDigit(encoderCount);
+        needRedraw = true;
+        break;
+      case CMD_SEEK:
+        // Normal tuning in seek mode
+        needRedraw |= doTune(encoderCount);
+        eepromRequestSave();
+        break;
       }
 
       // Clear encoder rotation
@@ -713,28 +762,28 @@ void loop()
   else
   {
     // If encoder has been rotated
-    if(encoderCount)
+    if (encoderCount)
     {
-      switch(currentCmd)
+      switch (currentCmd)
       {
-        case CMD_NONE:
-          // Tuning
-          needRedraw |= doTune(encoderCount);
-          break;
-        case CMD_FREQ:
-          // Digit tuning
-          needRedraw |= doDigit(encoderCount);
-          break;
-        case CMD_SEEK:
-          // Seek mode
-          needRedraw |= doSeek(encoderCount);
-          // Seek can take long time, renew the timestamp
-          currentTime = millis();
-          break;
-        default:
-          // Side bar menus / settings
-          needRedraw |= doSideBar(currentCmd, encoderCount);
-          break;
+      case CMD_NONE:
+        // Tuning
+        needRedraw |= doTune(encoderCount);
+        break;
+      case CMD_FREQ:
+        // Digit tuning
+        needRedraw |= doDigit(encoderCount);
+        break;
+      case CMD_SEEK:
+        // Seek mode
+        needRedraw |= doSeek(encoderCount);
+        // Seek can take long time, renew the timestamp
+        currentTime = millis();
+        break;
+      default:
+        // Side bar menus / settings
+        needRedraw |= doSideBar(currentCmd, encoderCount);
+        break;
       }
 
       // Reset timeouts
@@ -744,53 +793,55 @@ void loop()
       // Clear encoder rotation
       encoderCount = 0;
     }
-    else if(pb1st.isLongPressed)
+    else if (pb1st.isLongPressed)
     {
       // Encoder is being LONG PRESSED: TOGGLE DISPLAY
       sleepOn(!sleepOn());
       // CPU sleep can take long time, renew the timestamps
       elapsedSleep = elapsedCommand = currentTime = millis();
-
     }
-    else if(pb1st.wasClicked || pb1st.wasShortPressed)
+    else if (pb1st.wasClicked || pb1st.wasShortPressed)
     {
       // Encoder click or short press
       // Reset timeouts
       elapsedSleep = elapsedCommand = currentTime;
 
       // If in locked/unlocked sleep mode
-      if(sleepOn())
+      if (sleepOn())
       {
         // If sleep timeout is enabled, exit it via button press of any duration
         // (users don't need to figure out that a long press is required to wake up the device)
-        if(currentSleep)
+        if (currentSleep)
         {
           sleepOn(false);
           needRedraw = true;
         }
-        else if(sleepModeIdx == SLEEP_UNLOCKED)
+        else if (sleepModeIdx == SLEEP_UNLOCKED)
         {
           // Allow to adjust the volume in sleep mode
-          if(pb1st.wasShortPressed && currentCmd==CMD_NONE)
+          if (pb1st.wasShortPressed && currentCmd == CMD_NONE)
             currentCmd = CMD_VOLUME;
-          else if(currentCmd==CMD_VOLUME)
+          else if (currentCmd == CMD_VOLUME)
             clickHandler(currentCmd, pb1st.wasShortPressed);
 
           needRedraw = true;
         }
       }
-      else if(clickHandler(currentCmd, pb1st.wasShortPressed))
+      else if (clickHandler(currentCmd, pb1st.wasShortPressed))
       {
         // Command handled, redraw screen
         needRedraw = true;
+
+        // EiBi can take long time, renew the timestamps
+        elapsedSleep = elapsedCommand = currentTime = millis();
       }
-      else if(currentCmd != CMD_NONE)
+      else if (currentCmd != CMD_NONE)
       {
         // Deactivate modal mode
         currentCmd = CMD_NONE;
         needRedraw = true;
       }
-      else if(pb1st.wasShortPressed)
+      else if (pb1st.wasShortPressed)
       {
         // Volume shortcut (only active in VFO mode)
         currentCmd = CMD_VOLUME;
@@ -806,16 +857,16 @@ void loop()
   }
 
   // Deactivate push and rotate mode
-  if(!pb1st.isPressed && pushAndRotate)
+  if (!pb1st.isPressed && pushAndRotate)
   {
     pushAndRotate = false;
     needRedraw = true;
   }
 
   // Disable commands control
-  if((currentTime - elapsedCommand) > ELAPSED_COMMAND)
+  if ((currentTime - elapsedCommand) > ELAPSED_COMMAND)
   {
-    if(currentCmd != CMD_NONE)
+    if (currentCmd != CMD_NONE)
     {
       currentCmd = CMD_NONE;
       needRedraw = true;
@@ -825,28 +876,35 @@ void loop()
   }
 
   // Display sleep timeout
-  if(currentSleep && !sleepOn() && ((currentTime - elapsedSleep) > currentSleep * 1000))
+  if (currentSleep && !sleepOn() && ((currentTime - elapsedSleep) > currentSleep * 1000))
   {
     sleepOn(true);
     // CPU sleep can take long time, renew the timestamps
     elapsedSleep = elapsedCommand = currentTime = millis();
   }
 
-  if((currentTime - elapsedRSSI) > MIN_ELAPSED_RSSI_TIME)
+  if ((currentTime - elapsedRSSI) > MIN_ELAPSED_RSSI_TIME)
   {
     needRedraw |= processRssiSnr();
     elapsedRSSI = currentTime;
   }
 
   // Periodically check received RDS information
-  if((currentTime - lastRDSCheck) > RDS_CHECK_TIME)
+  if ((currentTime - lastRDSCheck) > RDS_CHECK_TIME)
   {
     needRedraw |= (currentMode == FM) && (snr >= 12) && checkRds();
     lastRDSCheck = currentTime;
   }
 
+  // Periodically check schedule
+  if ((currentTime - lastScheduleCheck) > SCHEDULE_CHECK_TIME)
+  {
+    needRedraw |= identifyFrequency(currentFrequency + currentBFO / 1000, true);
+    lastScheduleCheck = currentTime;
+  }
+
   // Periodically synchronize time via NTP
-  if((currentTime - lastNTPCheck) > NTP_CHECK_TIME)
+  if ((currentTime - lastNTPCheck) > NTP_CHECK_TIME)
   {
     needRedraw |= ntpSyncTime();
     lastNTPCheck = currentTime;
@@ -861,7 +919,7 @@ void loop()
 
 #ifdef ENABLE_HOLDOFF
   // Check if tuning flag is set
-  if(tuning_flag && ((currentTime - tuning_timer) > TUNE_HOLDOFF_TIME))
+  if (tuning_flag && ((currentTime - tuning_timer) > TUNE_HOLDOFF_TIME))
   {
     tuning_flag = false;
     needRedraw = true;
@@ -873,25 +931,26 @@ void loop()
 
   // Periodically refresh the main screen
   // This covers the case where there is nothing else triggering a refresh
-  if(needRedraw) background_timer = currentTime;
-  if((currentTime - background_timer) > BACKGROUND_REFRESH_TIME)
+  if (needRedraw)
+    background_timer = currentTime;
+  if ((currentTime - background_timer) > BACKGROUND_REFRESH_TIME)
   {
-    if(currentCmd == CMD_NONE) needRedraw = true;
+    if (currentCmd == CMD_NONE)
+      needRedraw = true;
     background_timer = currentTime;
   }
 
   // Redraw screen if necessary
-  if(needRedraw) drawScreen();
-
-/////////////////////////////////////////////////////////////////////////////
-
+  if (needRedraw)
+    drawScreen();
+    
+  //Text stop reset  
   if (textStop && (millis() - lastConnectMillis2 >= 5000))
   {
     Serial.println("⏹️ Text stop reset after 5 sec idle");
     textStop = false;
+    lastConnectMillis2 = currentTime;
   }
-
-////////////////////////////////////////////////////////////////////////////
 
   // Add a small default delay in the main loop
   delay(5);

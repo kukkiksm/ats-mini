@@ -1,6 +1,8 @@
 #include "Common.h"
 #include "Storage.h"
 #include "Themes.h"
+#include "Storage.h"
+#include "Utils.h"
 #include "Menu.h"
 
 #include <WiFi.h>

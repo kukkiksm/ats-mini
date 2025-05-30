@@ -175,8 +175,6 @@ void getmyutc()
   }
 }
 
-int weatherType = 0; // 0=Clear, 1=Clouds, 2=Rain, 3=Thunder, 4=Fog, 5=Snow
-
 int classifyWeatherCode(int code)
 {
   if (code == 0)
