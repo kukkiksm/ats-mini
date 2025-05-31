@@ -3,7 +3,6 @@
 #include "Utils.h"
 #include "Menu.h"
 #include "EIBI.h"
-#include "Globals.h"
 
 // CB frequency range
 #define MIN_CB_FREQUENCY 26060
@@ -204,8 +203,8 @@ static bool showRdsTime(const char *rdsTime)
   // If NTP time available, do not use RDS time
   if(!rdsTime || ntpIsAvailable()) return(false);
 
-  // The standard RDS time format is ï¿½HH:MMï¿½.
-  // or sometimes more complex like ï¿½DD.MM.YY,HH:MMï¿½.
+  // The standard RDS time format is “HH:MM”.
+  // or sometimes more complex like “DD.MM.YY,HH:MM”.
   const char *timeField = strstr(rdsTime, ":");
 
   // If we find a valid time format...
@@ -330,23 +329,41 @@ static const char *findScheduleByFreq(uint16_t freq, bool periodic)
   return(entry? entry->name : 0);
 }
 
-bool identifyFrequency(uint16_t freq, bool same)
+bool identifyFrequency(uint16_t freq, bool periodic)
 {
   const char *name;
+  static uint16_t last_freq = 0;
+  static bool name_found = false;
 
-  // Do not try look up static names for the same frequency
-  if(!same)
+  // RDS has priority on FM
+  if(currentMode==FM) return(false);
+
+  // Do not try to look up static names more than once for the same freq
+  if(periodic && last_freq==freq && name_found) return(false);
+  last_freq = freq;
+  name_found = false;
+
+  // For non-periodic calls the name will be found earlier
+  if(!periodic)
   {
     // Try list of named frequencies first
     name = findNameByFreq(freq, namedFrequencies, ITEM_COUNT(namedFrequencies));
-    if(name) return(showStationName(name));
+    if(name)
+    {
+      name_found = true;
+      return(showStationName(name));
+    }
 
     // Try CB channel names
     name = findCBChannelByFreq(freq);
-    if(name) return(showStationName(name));
+    if(name)
+    {
+      name_found = true;
+      return(showStationName(name));
+    }
   }
 
   // Try EIBI schedule
-  name = findScheduleByFreq(freq, same);
+  name = findScheduleByFreq(freq, periodic);
   return(showStationName(name? name : "", true));
 }

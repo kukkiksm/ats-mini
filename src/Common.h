@@ -13,7 +13,7 @@
 #define AUTHORS_LINE2  "Volos Projects, Ralph Xavier, Sunnygold,"
 #define AUTHORS_LINE3  "Goshante, G8PTN (Dave), R9UCL (Max Arnold),"
 #define AUTHORS_LINE4  "Marat Fayzullin"
-#define APP_VERSION    224  // FIRMWARE VERSION
+#define APP_VERSION    225  // FIRMWARE VERSION
 #define EEPROM_VERSION 71   // EEPROM VERSION (forces reset)
 
 // Modes
@@ -185,7 +185,7 @@ const char *getRdsTime();
 uint16_t getRdsPiCode();
 void clearStationInfo();
 bool checkRds();
-bool identifyFrequency(uint16_t freq, bool same = false);
+bool identifyFrequency(uint16_t freq, bool periodic = false);
 
 // Network.cpp
 void netClearPreferences();

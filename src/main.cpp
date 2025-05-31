@@ -268,7 +268,6 @@ ICACHE_RAM_ATTR void rotaryEncoder()
   {
     encoderCount = encoderStatus == DIR_CW ? 1 : -1;
     seekStop = true;
-    textStop = true;
   }
 }
 
@@ -943,14 +942,14 @@ void loop()
   // Redraw screen if necessary
   if (needRedraw)
     drawScreen();
-    
-  //Text stop reset  
-  if (textStop && (millis() - lastConnectMillis2 >= 5000))
+
+  // Text stop reset
+  if ((shouldCycle || textStop) && (millis() - lastConnectMillis2 >= 5000))
   {
     Serial.println("⏹️ Text stop reset after 5 sec idle");
     textStop = false;
     shouldCycle = false;
-    lastConnectMillis2 = currentTime;
+    lastConnectMillis2 = millis(); // ✅ แก้ให้ชัดเจน
   }
 
   // Add a small default delay in the main loop

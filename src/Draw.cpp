@@ -7,8 +7,7 @@
 #include <LittleFS.h>
 #include <nvs.h>
 #include <nvs_flash.h>
-
-#include "Globals.h"
+#include <Globals.h>
 
 // Display position control
 #define MENU_OFFSET_X 0        // Menu horizontal offset
@@ -114,7 +113,7 @@ static void drawAboutSystem(uint8_t arrow)
 
   sprintf(
       text,
-      "FLASH: %luM, %luk (%luk), FS %luk (%luk)",
+      "FLASH: %luM, %luk (%uk), FS %luk (%uk)",
       ESP.getFlashChipSize() / (1024U * 1024U),
       ESP.getFreeSketchSpace() / 1024U, (ESP.getFreeSketchSpace() - ESP.getSketchSize()) / 1024U,
       LittleFS.totalBytes() / 1024U, (LittleFS.totalBytes() - LittleFS.usedBytes()) / 1024U);
@@ -124,7 +123,7 @@ static void drawAboutSystem(uint8_t arrow)
   nvs_get_stats(NULL, &nvs_stats);
   sprintf(
       text,
-      "NVS: TOTAL %lu, USED %lu, FREE %lu",
+      "NVS: TOTAL %u, USED %u, FREE %u",
       nvs_stats.total_entries,
       nvs_stats.used_entries,
       nvs_stats.free_entries);
@@ -636,11 +635,13 @@ static void drawLayoutSmeter(const char *statusLine1, const char *statusLine2)
   {
     drawLongStationName(getStationName() + 1, MENU_OFFSET_X + 1 + 76 + MENU_DELTA_X + 2, RDS_OFFSET_Y);
     shouldCycle = true;
+    if (currentMode == FM)
+      shouldCycle = false;
   }
   else if (*getStationName())
   {
     drawStationName(getStationName(), RDS_OFFSET_X, RDS_OFFSET_Y);
-    shouldCycle = true;
+    shouldCycle = false;
   }
 
   // Draw band scale
@@ -703,16 +704,17 @@ void drawLayoutDefault(const char *statusLine1, const char *statusLine2)
       currentCmd == CMD_FREQ ? getFreqInputPos() + (pushAndRotate ? 0x80 : 0) : 100);
 
   // Show station or channel name, if present
-
   if (*getStationName() == 0xFF)
   {
     drawLongStationName(getStationName() + 1, MENU_OFFSET_X + 1 + 76 + MENU_DELTA_X + 2, RDS_OFFSET_Y);
     shouldCycle = true;
+    if (currentMode == FM)
+      shouldCycle = false;
   }
   else if (*getStationName())
   {
     drawStationName(getStationName(), RDS_OFFSET_X, RDS_OFFSET_Y);
-    shouldCycle = true;
+    shouldCycle = false;
   }
 
   // Draw left-side menu/info bar
@@ -770,23 +772,29 @@ void drawScreen(const char *statusLine1, const char *statusLine2)
     spr.pushSprite(0, 0);
   }
 #else
+  // No hold off
 
   int maxround = 8;
   spr.setTextDatum(TL_DATUM);
+
+  String aqiText = "";
+  if (aqiValue > 0)
+  {
+    aqiText = "AQI: " + String(aqiValue) + " PM25: " + String(pm25Value) + " ug/m3";
+  }
 
   String messages[] = {
       dateNow,
       weatherStr,
       tempStr + " " + rainStr,
       windStr,
-      "AQI: " + String(aqiValue) + " PM25: " + String(pm25Value) + " ug/m3",
+      aqiText,
       forecastText[0],
       forecastText[1],
       forecastText[2]};
 
   if (shouldCycle)
   {
-    //spr.drawString(dateNow, 100, 23, 2);
     if (roundDisplay >= 0 && roundDisplay < maxround)
       spr.drawString(messages[roundDisplay], 100, 23, 2);
     else
@@ -820,7 +828,6 @@ void drawScreen(const char *statusLine1, const char *statusLine2)
     }
   }
 
-  // No hold off
   spr.pushSprite(0, 0);
 #endif
 }

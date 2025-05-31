@@ -13,10 +13,13 @@
 #define EEPROM_SETP_ADDR 0x120
 #define EEPROM_VER_ADDR 0x1F0
 
-static bool showEepromFlag = false; // TRUE: Writing to EEPROM
-static bool itIsTimeToSave = false; // TRUE: Need to save to EEPROM
-static bool itIsTimeToLoad = false; // TRUE: Need to load from EEPROM
+static bool showEepromFlag = false;   // TRUE: Writing to EEPROM
+static bool itIsTimeToSave = false;   // TRUE: Need to save to EEPROM
+static bool itIsTimeToUpdate = false; // TRUE: Need to update EEPROM
 static uint32_t storeTime = millis();
+
+// Buffer used to stage EEPROM updates
+static uint8_t updateBuf[EEPROM_SIZE];
 
 // To store any change into the EEPROM, we need at least STORE_TIME
 // milliseconds of inactivity.
@@ -27,21 +30,29 @@ void eepromRequestSave(bool now)
   itIsTimeToSave = true;
 }
 
-void eepromRequestLoad()
+// Buffer new EEPROM contents (possibly from a different thread)
+// and request writing EEPROM (in the main thread).
+bool eepromRequestUpdate(const uint8_t *eepromUpdate, uint32_t size)
 {
-  storeTime = millis();
-  itIsTimeToLoad = true;
+  if (size != sizeof(updateBuf))
+    return (false);
+
+  memcpy(updateBuf, eepromUpdate, sizeof(updateBuf));
+  itIsTimeToUpdate = true;
+  return (true);
 }
 
 void eepromTickTime()
 {
-  // Load configuration if requested
-  if (itIsTimeToLoad)
+  // Update EEPROM if requested
+  if (itIsTimeToUpdate)
   {
+    eepromWriteBinary(updateBuf, sizeof(updateBuf));
     eepromLoadConfig();
     selectBand(bandIdx, false);
     rx.setVolume(volume);
-    itIsTimeToLoad = false;
+    itIsTimeToUpdate = false;
+    itIsTimeToSave = false;
   }
 
   // Save configuration if requested
@@ -292,12 +303,10 @@ void eepromLoadConfig()
 
 bool diskInit(bool force)
 {
-
   if (!LittleFS.begin(FORMAT_LITTLEFS_IF_FAILED))
   {
     Serial.println("❌ LittleFS mount failed!");
   }
-
   if (force)
   {
     LittleFS.end();
@@ -334,9 +343,8 @@ bool eepromReadBinary(uint8_t *buf, uint32_t size)
   if (size < EEPROM_SIZE)
     return (false);
 
-  // Make sure nobody saves or loads
+  // Make sure nobody saves
   itIsTimeToSave = false;
-  itIsTimeToLoad = false;
 
   EEPROM.begin(EEPROM_SIZE);
 
@@ -352,9 +360,8 @@ bool eepromWriteBinary(const uint8_t *buf, uint32_t size)
   if (size > EEPROM_SIZE)
     return (false);
 
-  // Make sure nobody saves or loads
+  // Make sure nobody saves
   itIsTimeToSave = false;
-  itIsTimeToLoad = false;
 
   EEPROM.begin(EEPROM_SIZE);
 
@@ -363,7 +370,5 @@ bool eepromWriteBinary(const uint8_t *buf, uint32_t size)
 
   EEPROM.end();
 
-  // Now we need to load new EEPROM config
-  eepromRequestLoad();
   return (true);
 }
