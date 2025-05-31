@@ -786,7 +786,21 @@ void drawScreen(const char *statusLine1, const char *statusLine2)
 
   if (shouldCycle)
   {
-    spr.drawString(dateNow, 100, 23, 2);
+    //spr.drawString(dateNow, 100, 23, 2);
+    if (roundDisplay >= 0 && roundDisplay < maxround)
+      spr.drawString(messages[roundDisplay], 100, 23, 2);
+    else
+      spr.drawString(dateNow, 100, 23, 2);
+
+    if (!textStop)
+    {
+      roundLoop++;
+      if (roundLoop >= 8)
+      {
+        roundDisplay = (roundDisplay + 1) % maxround;
+        roundLoop = 0;
+      }
+    }
   }
   else
   {
