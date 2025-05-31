@@ -949,6 +949,7 @@ void loop()
   {
     Serial.println("⏹️ Text stop reset after 5 sec idle");
     textStop = false;
+    shouldCycle = false;
     lastConnectMillis2 = currentTime;
   }
 
