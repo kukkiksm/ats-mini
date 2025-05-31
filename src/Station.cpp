@@ -292,7 +292,10 @@ static const char *findScheduleByFreq(uint16_t freq, bool same)
 {
   uint8_t hour, minute;
 
-  if (currentMode == FM) return 0;
+  if (currentMode == FM) {
+    shouldCycle = false;  // ✅ ปิดการวนชื่อสถานีใน FM mode
+    return 0;
+  }
 
   // Must have valid time
   if (!clockGetHM(&hour, &minute)) return 0;
@@ -334,7 +337,6 @@ static const char *findScheduleByFreq(uint16_t freq, bool same)
       shouldCycle = false;
   }
 
-  // Return just the station name
   return (entry ? entry->name : 0);
 }
 
