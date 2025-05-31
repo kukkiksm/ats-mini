@@ -11,50 +11,57 @@
 #include "Globals.h"
 
 // Display position control
-#define MENU_OFFSET_X    0    // Menu horizontal offset
-#define MENU_OFFSET_Y   18    // Menu vertical offset
-#define ALT_MENU_OFFSET_X    0    // Menu horizontal offset
-#define ALT_MENU_OFFSET_Y    0    // Menu vertical offset
-#define MENU_DELTA_X    10    // Menu width delta
-#define METER_OFFSET_X   0    // Meter horizontal offset
-#define METER_OFFSET_Y   0    // Meter vertical offset
-#define ALT_METER_OFFSET_X  75    // Meter horizontal offset
-#define ALT_METER_OFFSET_Y 136    // Meter vertical offset
-#define SAVE_OFFSET_X   90    // EEPROM save icon horizontal offset
-#define SAVE_OFFSET_Y    0    // EEPROM save icon vertical offset
-#define FREQ_OFFSET_X  250    // Frequency horizontal offset
-#define FREQ_OFFSET_Y   62    // Frequency vertical offset
-#define FUNIT_OFFSET_X 255    // Frequency Unit horizontal offset
-#define FUNIT_OFFSET_Y  45    // Frequency Unit vertical offset
-#define BAND_OFFSET_X  150    // Band horizontal offset
-#define BAND_OFFSET_Y    -3  //9    // Band vertical offset
+#define MENU_OFFSET_X 0        // Menu horizontal offset
+#define MENU_OFFSET_Y 18       // Menu vertical offset
+#define ALT_MENU_OFFSET_X 0    // Menu horizontal offset
+#define ALT_MENU_OFFSET_Y 0    // Menu vertical offset
+#define MENU_DELTA_X 10        // Menu width delta
+#define METER_OFFSET_X 0       // Meter horizontal offset
+#define METER_OFFSET_Y 0       // Meter vertical offset
+#define ALT_METER_OFFSET_X 75  // Meter horizontal offset
+#define ALT_METER_OFFSET_Y 136 // Meter vertical offset
+#define SAVE_OFFSET_X 90       // EEPROM save icon horizontal offset
+#define SAVE_OFFSET_Y 0        // EEPROM save icon vertical offset
+#define FREQ_OFFSET_X 250      // Frequency horizontal offset
+#define FREQ_OFFSET_Y 62       // Frequency vertical offset
+#define FUNIT_OFFSET_X 255     // Frequency Unit horizontal offset
+#define FUNIT_OFFSET_Y 45      // Frequency Unit vertical offset
+#define BAND_OFFSET_X 150      // Band horizontal offset
+#define BAND_OFFSET_Y -3       // 9    // Band vertical offset
 #define ALT_STEREO_OFFSET_X 232
 #define ALT_STEREO_OFFSET_Y 24
-#define RDS_OFFSET_X   165    // RDS horizontal offset
-#define RDS_OFFSET_Y    94    // RDS vertical offset
-#define STATUS_OFFSET_X 160   // Status & RDS text horizontal offset
-#define STATUS_OFFSET_Y 135   // Status & RDS text vertical offset
-#define BATT_OFFSET_X  288    // Battery meter x offset
-#define BATT_OFFSET_Y    0    // Battery meter y offset
-#define WIFI_OFFSET_X  237    // WiFi x offset
-#define WIFI_OFFSET_Y    0    // WiFi y offset
+#define RDS_OFFSET_X 165    // RDS horizontal offset
+#define RDS_OFFSET_Y 94     // RDS vertical offset
+#define STATUS_OFFSET_X 160 // Status & RDS text horizontal offset
+#define STATUS_OFFSET_Y 135 // Status & RDS text vertical offset
+#define BATT_OFFSET_X 288   // Battery meter x offset
+#define BATT_OFFSET_Y 0     // Battery meter y offset
+#define WIFI_OFFSET_X 237   // WiFi x offset
+#define WIFI_OFFSET_Y 0     // WiFi y offset
 
-static void displayQRCode(esp_qrcode_handle_t qrcode) {
-    int size = esp_qrcode_get_size(qrcode);
-    for (int y = 0; y < size; y++) {
-        for (int x = 0; x < size; x++) {
-            if (esp_qrcode_get_module(qrcode, x, y)) {
-                spr.fillRect(2 + x * 4, 170 - 2 - size * 4 + y * 4, 4, 4, TH.text);
-            }
-        }
+static void displayQRCode(esp_qrcode_handle_t qrcode)
+{
+  int size = esp_qrcode_get_size(qrcode);
+  for (int y = 0; y < size; y++)
+  {
+    for (int x = 0; x < size; x++)
+    {
+      if (esp_qrcode_get_module(qrcode, x, y))
+      {
+        spr.fillRect(2 + x * 4, 170 - 2 - size * 4 + y * 4, 4, 4, TH.text);
+      }
     }
+  }
 }
 
 static void drawAboutCommon(uint8_t arrow)
 {
-  if(arrow & 3) spr.fillRect(282, 11, 22, 3, TH.text_muted);
-  if(arrow & 2) spr.fillTriangle(279, 12, 285, 8, 285, 16, TH.text_muted);
-  if(arrow & 1) spr.fillTriangle(307, 12, 301, 8, 301, 16, TH.text_muted);
+  if (arrow & 3)
+    spr.fillRect(282, 11, 22, 3, TH.text_muted);
+  if (arrow & 2)
+    spr.fillTriangle(279, 12, 285, 8, 285, 16, TH.text_muted);
+  if (arrow & 1)
+    spr.fillTriangle(307, 12, 301, 8, 301, 16, TH.text_muted);
 
   spr.setTextDatum(TL_DATUM);
   spr.setTextColor(TH.text_muted, TH.bg);
@@ -76,7 +83,7 @@ void drawAboutHelp(uint8_t arrow)
   spr.drawString("the User Manual.", 130, 70 + 16 * 0, 2);
   spr.drawString("Click the encoder button", 130, 70 + 16 * 1, 2);
   spr.drawString("to continue.", 130, 70 + 16 * 2, 2);
-  if(arrow)
+  if (arrow)
   {
     spr.drawString("Rotate the encoder to see", 130, 70 + 16 * 3, 2);
     spr.drawString("the next page.", 130, 70 + 16 * 4, 2);
@@ -98,58 +105,53 @@ static void drawAboutSystem(uint8_t arrow)
 
   char text[100];
   sprintf(
-    text,
-    "CPU: %s r%i, %lu MHz",
-    ESP.getChipModel(),
-    ESP.getChipRevision(),
-    ESP.getCpuFreqMHz()
-  );
+      text,
+      "CPU: %s r%i, %lu MHz",
+      ESP.getChipModel(),
+      ESP.getChipRevision(),
+      ESP.getCpuFreqMHz());
   spr.drawString(text, 2, 70 + 16 * -1, 2);
 
   sprintf(
-    text,
-    "FLASH: %luM, %luk (%luk), FS %luk (%luk)",
-    ESP.getFlashChipSize() / (1024U * 1024U),
-    ESP.getFreeSketchSpace() / 1024U, (ESP.getFreeSketchSpace() - ESP.getSketchSize()) / 1024U,
-    LittleFS.totalBytes() / 1024U, (LittleFS.totalBytes() - LittleFS.usedBytes()) / 1024U
-  );
+      text,
+      "FLASH: %luM, %luk (%luk), FS %luk (%luk)",
+      ESP.getFlashChipSize() / (1024U * 1024U),
+      ESP.getFreeSketchSpace() / 1024U, (ESP.getFreeSketchSpace() - ESP.getSketchSize()) / 1024U,
+      LittleFS.totalBytes() / 1024U, (LittleFS.totalBytes() - LittleFS.usedBytes()) / 1024U);
   spr.drawString(text, 2, 70 + 16 * 0, 2);
 
   nvs_stats_t nvs_stats;
   nvs_get_stats(NULL, &nvs_stats);
   sprintf(
-    text,
-    "NVS: TOTAL %lu, USED %lu, FREE %lu",
-    nvs_stats.total_entries,
-    nvs_stats.used_entries,
-    nvs_stats.free_entries
-  );
+      text,
+      "NVS: TOTAL %lu, USED %lu, FREE %lu",
+      nvs_stats.total_entries,
+      nvs_stats.used_entries,
+      nvs_stats.free_entries);
   spr.drawString(text, 2, 70 + 16 * 1, 2);
 
   sprintf(
-    text,
-    "MEM: HEAP %luk (%luk), PSRAM %luk (%luk)",
-    ESP.getHeapSize()/1024U, ESP.getFreeHeap()/1024U,
-    ESP.getPsramSize()/1024U, ESP.getFreePsram()/1024U
-  );
+      text,
+      "MEM: HEAP %luk (%luk), PSRAM %luk (%luk)",
+      ESP.getHeapSize() / 1024U, ESP.getFreeHeap() / 1024U,
+      ESP.getPsramSize() / 1024U, ESP.getFreePsram() / 1024U);
   spr.drawString(text, 2, 70 + 16 * 2, 2);
 
   sprintf(
-    text,
-    "Display ID: %08lX, STAT: %02X%08lX",
-    tft.readcommand32(ST7789_RDDID, 1),
-    tft.readcommand8(ST7789_RDDST, 1),
-    tft.readcommand32(ST7789_RDDST, 2)
-  );
+      text,
+      "Display ID: %08lX, STAT: %02X%08lX",
+      tft.readcommand32(ST7789_RDDID, 1),
+      tft.readcommand8(ST7789_RDDST, 1),
+      tft.readcommand32(ST7789_RDDST, 2));
   spr.drawString(text, 2, 70 + 16 * 3, 2);
 
   sprintf(text, "WiFi MAC: %s", getMACAddress());
   spr.drawString(text, 2, 70 + 16 * 4, 2);
 
-  for(int i=0 ; i<8 ; i++)
+  for (int i = 0; i < 8; i++)
   {
-    uint16_t rgb = (i&1? 0x001F:0) | (i&2? 0x07E0:0) | (i&4? 0xF800:0);
-    spr.fillRect(i*40, 160, 40, 20, rgb);
+    uint16_t rgb = (i & 1 ? 0x001F : 0) | (i & 2 ? 0x07E0 : 0) | (i & 4 ? 0xF800 : 0);
+    spr.fillRect(i * 40, 160, 40, 20, rgb);
   }
   spr.pushSprite(0, 0);
 }
@@ -173,18 +175,27 @@ static void drawAboutAuthors(uint8_t arrow)
 //
 static void drawAbout()
 {
-  switch(doAbout(0)) {
-  case 0: drawAboutHelp(1); break;
-  case 1: drawAboutAuthors(3); break;
-  case 2: drawAboutSystem(2); break;
-  default: break;
+  switch (doAbout(0))
+  {
+  case 0:
+    drawAboutHelp(1);
+    break;
+  case 1:
+    drawAboutAuthors(3);
+    break;
+  case 2:
+    drawAboutSystem(2);
+    break;
+  default:
+    break;
   }
 }
 
 // Draw zoomed menu item
 void drawZoomedMenu(const char *text)
 {
-  if (!zoomMenu) return;
+  if (!zoomMenu)
+    return;
 
   spr.fillSmoothRoundRect(RDS_OFFSET_X - 70 + 1, RDS_OFFSET_Y - 3 + 1, 148, 26, 4, TH.menu_bg);
   spr.setTextDatum(TC_DATUM);
@@ -198,7 +209,8 @@ void drawZoomedMenu(const char *text)
 //
 void drawLoadingSSB()
 {
-  if(sleepOn()) return;
+  if (sleepOn())
+    return;
 
   spr.setTextDatum(MC_DATUM);
   spr.fillSmoothRoundRect(80, 40, 160, 40, 4, TH.text);
@@ -234,11 +246,11 @@ static void drawRadioText(int y, int ymax)
   // Draw potentially multi-line radio text
   spr.setTextDatum(TC_DATUM);
   spr.setTextColor(TH.rds_text, TH.bg);
-  for(; *rt && (y<ymax) ; y+=17, rt+=strlen(rt)+1)
+  for (; *rt && (y < ymax); y += 17, rt += strlen(rt) + 1)
     spr.drawString(rt, 160, y, 2);
 
   // Show program info if we have it and there is enough space
-  if((y<ymax) && *getProgramInfo())
+  if ((y < ymax) && *getProgramInfo())
     spr.drawString(getProgramInfo(), 160, y, 2);
 }
 
@@ -247,39 +259,42 @@ static void drawRadioText(int y, int ymax)
 //
 static void drawFrequency(uint32_t freq, int x, int y, int ux, int uy, uint8_t hl)
 {
-  struct Line { int x, y, w; };
+  struct Line
+  {
+    int x, y, w;
+  };
 
   const Line hlDigitsFM[] =
-  {
-    { x - 30 - 32 * 0 -  0, y + 28, 27 }, //         .01
-    { x - 30 - 32 * 0 - 16, y + 28, 27 + 16 }, //    .05
-    { x - 30 - 32 * 1 -  0, y + 28, 27 }, //         .10
-    { x - 30 - 32 * 1 - 22, y + 28, 27 + 22 }, //    .50
-    { x - 30 - 32 * 2 - 12, y + 28, 27 }, //        1.00
-    { x - 30 - 32 * 2 - 28, y + 28, 27 + 16 }, //   5.00
-    { x - 30 - 32 * 3 - 12, y + 28, 27 }, //       10.00
-    { x - 30 - 32 * 3 - 28, y + 28, 27 + 16 }, //  50.00
-    { x - 30 - 32 * 4 +  4, y + 28, 11 }, //      100.00
-  };
+      {
+          {x - 30 - 32 * 0 - 0, y + 28, 27},       //         .01
+          {x - 30 - 32 * 0 - 16, y + 28, 27 + 16}, //    .05
+          {x - 30 - 32 * 1 - 0, y + 28, 27},       //         .10
+          {x - 30 - 32 * 1 - 22, y + 28, 27 + 22}, //    .50
+          {x - 30 - 32 * 2 - 12, y + 28, 27},      //        1.00
+          {x - 30 - 32 * 2 - 28, y + 28, 27 + 16}, //   5.00
+          {x - 30 - 32 * 3 - 12, y + 28, 27},      //       10.00
+          {x - 30 - 32 * 3 - 28, y + 28, 27 + 16}, //  50.00
+          {x - 30 - 32 * 4 + 4, y + 28, 11},       //      100.00
+      };
 
   const Line hlDigitsAMSSB[] =
-  {
-    { x + 12 + 14 * 2 -  0, y + 28, 12 }, //           .001
-    { x + 12 + 14 * 2 -  7, y + 28, 12 + 7 }, //       .005
-    { x + 12 + 14 * 1 -  0, y + 28, 12 }, //           .010
-    { x + 12 + 14 * 1 -  7, y + 28, 12 + 7 }, //       .050
-    { x + 12 + 14 * 0 -  0, y + 28, 12 }, //           .100
-    { x + 12 + 14 * 0 - 11, y + 28, 12 + 11 }, //      .500
-    { x - 30 - 32 * 0 -  0, y + 28, 27 }, //          1.000
-    { x - 30 - 32 * 0 - 16, y + 28, 27 + 16 }, //     5.000
-    { x - 30 - 32 * 1 -  0, y + 28, 27 }, //         10.000
-    { x - 30 - 32 * 1 - 16, y + 28, 27 + 16 }, //    50.000
-    { x - 30 - 32 * 2 -  0, y + 28, 27 }, //        100.000
-    { x - 30 - 32 * 2 - 16, y + 28, 27 + 16 }, //   500.000
-    { x - 30 - 32 * 3 -  0, y + 28, 27 }, //       1000.000
-    { x - 30 - 32 * 3 - 16, y + 28, 27 + 16 }, //  5000.000
-    { x - 30 - 32 * 4 -  0, y + 28, 27 }, //      10000.000
-  };
+      {
+          {x + 12 + 14 * 2 - 0, y + 28, 12},       //           .001
+          {x + 12 + 14 * 2 - 7, y + 28, 12 + 7},   //       .005
+          {x + 12 + 14 * 1 - 0, y + 28, 12},       //           .010
+          {x + 12 + 14 * 1 - 7, y + 28, 12 + 7},   //       .050
+          {x + 12 + 14 * 0 - 0, y + 28, 12},       //           .100
+          {x + 12 + 14 * 0 - 11, y + 28, 12 + 11}, //      .500
+          {x - 30 - 32 * 0 - 0, y + 28, 27},       //          1.000
+          {x - 30 - 32 * 0 - 16, y + 28, 27 + 16}, //     5.000
+          {x - 30 - 32 * 1 - 0, y + 28, 27},       //         10.000
+          {x - 30 - 32 * 1 - 16, y + 28, 27 + 16}, //    50.000
+          {x - 30 - 32 * 2 - 0, y + 28, 27},       //        100.000
+          {x - 30 - 32 * 2 - 16, y + 28, 27 + 16}, //   500.000
+          {x - 30 - 32 * 3 - 0, y + 28, 27},       //       1000.000
+          {x - 30 - 32 * 3 - 16, y + 28, 27 + 16}, //  5000.000
+          {x - 30 - 32 * 4 - 0, y + 28, 27},       //      10000.000
+      };
 
   // Top bit specifies if the digit selector is on
   bool selectOn = hl & 0x80;
@@ -291,13 +306,13 @@ static void drawFrequency(uint32_t freq, int x, int y, int ux, int uy, uint8_t h
   spr.setTextDatum(MR_DATUM);
   spr.setTextColor(TH.freq_text, TH.bg);
 
-  if(currentMode==FM)
+  if (currentMode == FM)
   {
     // Determine where underscore is located
-    li = hl<ITEM_COUNT(hlDigitsFM)? &hlDigitsFM[hl] : 0;
+    li = hl < ITEM_COUNT(hlDigitsFM) ? &hlDigitsFM[hl] : 0;
 
     // FM frequency
-    spr.drawFloat(freq/100.00, 2, x, y, 7);
+    spr.drawFloat(freq / 100.00, 2, x, y, 7);
     spr.setTextDatum(ML_DATUM);
     spr.setTextColor(TH.funit_text, TH.bg);
     spr.drawString("MHz", ux, uy);
@@ -305,9 +320,9 @@ static void drawFrequency(uint32_t freq, int x, int y, int ux, int uy, uint8_t h
   else
   {
     // Determine where underscore is located
-    li = hl<ITEM_COUNT(hlDigitsAMSSB)? &hlDigitsAMSSB[hl] : 0;
+    li = hl < ITEM_COUNT(hlDigitsAMSSB) ? &hlDigitsAMSSB[hl] : 0;
 
-    if(isSSB())
+    if (isSSB())
     {
       // SSB frequency
       char text[32];
@@ -316,14 +331,14 @@ static void drawFrequency(uint32_t freq, int x, int y, int ux, int uy, uint8_t h
       spr.drawString(text, x, y, 7);
       spr.setTextDatum(ML_DATUM);
       sprintf(text, ".%3.3lu", freq % 1000);
-      spr.drawString(text, 4+x, 17+y, 4);
+      spr.drawString(text, 4 + x, 17 + y, 4);
     }
     else
     {
       // AM frequency
       spr.drawNumber(freq, x, y, 7);
       spr.setTextDatum(ML_DATUM);
-      spr.drawString(".000", 4+x, 17+y, 4);
+      spr.drawString(".000", 4 + x, 17 + y, 4);
     }
 
     // SSB/AM frequencies are measured in kHz
@@ -332,9 +347,9 @@ static void drawFrequency(uint32_t freq, int x, int y, int ux, int uy, uint8_t h
   }
 
   // If drawing an underscore...
-  if(li)
+  if (li)
   {
-    if(selectOn)
+    if (selectOn)
     {
       spr.fillRoundRect(li->x + 1, li->y - 1, li->w - 2, 3, 1, TH.freq_hl_sel);
       spr.fillTriangle(li->x, li->y, li->x + 2, li->y - 2, li->x + 2, li->y + 2, TH.freq_hl_sel);
@@ -369,27 +384,26 @@ static void drawScale(uint32_t freq)
   uint32_t minFreq = band->minimumFreq / 10;
   uint32_t maxFreq = band->maximumFreq / 10;
 
-  for(int i=0 ; i<41 ; i++, freq++)
+  for (int i = 0; i < 41; i++, freq++)
   {
     int16_t x = i * 8 - offset;
-    if(freq >= minFreq && freq <= maxFreq)
+    if (freq >= minFreq && freq <= maxFreq)
     {
       uint16_t lineColor =
-        i == 20 && (offset == 0 || ((freq % 5) == 0 && offset == 1)) ?
-          TH.scale_pointer : TH.scale_line;
+          i == 20 && (offset == 0 || ((freq % 5) == 0 && offset == 1)) ? TH.scale_pointer : TH.scale_line;
 
-      if((freq % 10) == 0)
+      if ((freq % 10) == 0)
       {
         spr.drawLine(x, 169, x, 150, lineColor);
         spr.drawLine(x + 1, 169, x + 1, 150, lineColor);
-        if(currentMode == FM)
+        if (currentMode == FM)
           spr.drawFloat(freq / 10.0, 1, x, 140, 2);
-        else if(freq >= 100)
+        else if (freq >= 100)
           spr.drawFloat(freq / 100.0, 3, x, 140, 2);
         else
           spr.drawNumber(freq * 10, x, 140, 2);
       }
-      else if((freq % 5) == 0 && (freq % 10) != 0)
+      else if ((freq % 5) == 0 && (freq % 10) != 0)
       {
         spr.drawLine(x, 169, x, 155, lineColor);
         spr.drawLine(x + 1, 169, x + 1, 155, lineColor);
@@ -411,24 +425,25 @@ static void drawSmallScale(uint32_t freq, int y)
   const uint16_t scaleStart = 51;
   const uint16_t scaleEnd = 269;
 
-  for(int i=scaleStart+3; i<=scaleEnd-3; i+=2) spr.drawPixel(i, y, TH.scale_line);
+  for (int i = scaleStart + 3; i <= scaleEnd - 3; i += 2)
+    spr.drawPixel(i, y, TH.scale_line);
   spr.drawCircle(scaleStart, y, 3, TH.scale_line);
   spr.drawCircle(scaleEnd, y, 3, TH.scale_line);
-  spr.fillCircle(scaleStart + (scaleEnd-scaleStart) * (freq - band->minimumFreq) / (band->maximumFreq - band->minimumFreq), y, 3, TH.scale_pointer);
+  spr.fillCircle(scaleStart + (scaleEnd - scaleStart) * (freq - band->minimumFreq) / (band->maximumFreq - band->minimumFreq), y, 3, TH.scale_pointer);
 
   char lim[8];
   spr.setTextColor(TH.scale_text, TH.bg);
   spr.setTextDatum(MC_DATUM);
-  if(band->bandType==FM_BAND_TYPE)
-    sprintf(lim, "%0.2f", band->minimumFreq/100.00);
+  if (band->bandType == FM_BAND_TYPE)
+    sprintf(lim, "%0.2f", band->minimumFreq / 100.00);
   else
     sprintf(lim, "%u", band->minimumFreq);
-  spr.drawString(lim, scaleStart-27, y, 2);
-  if(band->bandType==FM_BAND_TYPE)
-    sprintf(lim, "%0.2f", band->maximumFreq/100.00);
+  spr.drawString(lim, scaleStart - 27, y, 2);
+  if (band->bandType == FM_BAND_TYPE)
+    sprintf(lim, "%0.2f", band->maximumFreq / 100.00);
   else
     sprintf(lim, "%u", band->maximumFreq);
-  spr.drawString(lim, scaleEnd+27, y, 2);
+  spr.drawString(lim, scaleEnd + 27, y, 2);
 }
 
 //
@@ -439,28 +454,35 @@ static void drawSMeter(int strength, int x, int y)
   spr.drawTriangle(x + 1, y + 1, x + 11, y + 1, x + 6, y + 6, TH.smeter_icon);
   spr.drawLine(x + 6, y + 1, x + 6, y + 14, TH.smeter_icon);
 
-  for(int i=0 ; i<strength ; i++)
+  for (int i = 0; i < strength; i++)
   {
-    if(i<10)
-      spr.fillRect(15+x + (i*4), 2+y, 2, 12, TH.smeter_bar);
+    if (i < 10)
+      spr.fillRect(15 + x + (i * 4), 2 + y, 2, 12, TH.smeter_bar);
     else
-      spr.fillRect(15+x + (i*4), 2+y, 2, 12, TH.smeter_bar_plus);
+      spr.fillRect(15 + x + (i * 4), 2 + y, 2, 12, TH.smeter_bar_plus);
   }
 }
 
 static void drawLargeSMeter(int rssi, int strength, int x, int y)
 {
   // S-Meter legend
-  for(int i=x; i<=x+15*16 + 2; i+=2) spr.drawPixel(i, 28+y, TH.scale_line);
+  for (int i = x; i <= x + 15 * 16 + 2; i += 2)
+    spr.drawPixel(i, 28 + y, TH.scale_line);
   spr.setTextDatum(TC_DATUM);
   spr.setTextColor(TH.scale_text, TH.bg);
 
-  for(int i=0; i<16; i++) {
-    if (i%2) {
-      if (i < 10) spr.drawNumber(i, x+(i*15)-13, 20+y, 2);
-      if (i == 11) spr.drawString("+20", x+(i*15)-13, 20+y, 2);
-      if (i == 13) spr.drawString("+40", x+(i*15)-13, 20+y, 2);
-      if (i == 15) spr.drawString("+60", x+(i*15)-13, 20+y, 2);
+  for (int i = 0; i < 16; i++)
+  {
+    if (i % 2)
+    {
+      if (i < 10)
+        spr.drawNumber(i, x + (i * 15) - 13, 20 + y, 2);
+      if (i == 11)
+        spr.drawString("+20", x + (i * 15) - 13, 20 + y, 2);
+      if (i == 13)
+        spr.drawString("+40", x + (i * 15) - 13, 20 + y, 2);
+      if (i == 15)
+        spr.drawString("+60", x + (i * 15) - 13, 20 + y, 2);
     }
   }
   spr.setTextDatum(BL_DATUM);
@@ -469,13 +491,13 @@ static void drawLargeSMeter(int rssi, int strength, int x, int y)
   spr.drawNumber(rssi, x - 15, 40 + y, 4);
 
   // S-Meter
-  for(int i=0; i<49; i++)
-    if (i<28 && i<strength)
-      spr.fillRect(x+(i*5), 11+y, 3, 10, TH.smeter_bar);
-    else if (i<strength)
-      spr.fillRect(x+(i*5), 11+y, 3, 10, TH.smeter_bar_plus);
+  for (int i = 0; i < 49; i++)
+    if (i < 28 && i < strength)
+      spr.fillRect(x + (i * 5), 11 + y, 3, 10, TH.smeter_bar);
+    else if (i < strength)
+      spr.fillRect(x + (i * 5), 11 + y, 3, 10, TH.smeter_bar_plus);
     else
-      spr.fillRect(x+(i*5), 11+y, 3, 10, TH.smeter_bar_empty);
+      spr.fillRect(x + (i * 5), 11 + y, 3, 10, TH.smeter_bar_empty);
 }
 
 static void drawLargeSNMeter(int snr, int x, int y)
@@ -488,11 +510,11 @@ static void drawLargeSNMeter(int snr, int x, int y)
 
   // SN-Meter
   int snrbars = snr * 45 / 128.0;
-  for(int i=0; i<49; i++)
-    if (i<snrbars)
-      spr.fillRect(x+(i*5), y - 1, 3, 10, TH.smeter_bar);
+  for (int i = 0; i < 49; i++)
+    if (i < snrbars)
+      spr.fillRect(x + (i * 5), y - 1, 3, 10, TH.smeter_bar);
     else
-      spr.fillRect(x+(i*5), y - 1, 3, 10, TH.smeter_bar_empty);
+      spr.fillRect(x + (i * 5), y - 1, 3, 10, TH.smeter_bar_empty);
 }
 
 //
@@ -500,7 +522,7 @@ static void drawLargeSNMeter(int snr, int x, int y)
 //
 static void drawStereoIndicator(int x, int y, bool stereo = true)
 {
-  if(stereo)
+  if (stereo)
   {
     // Split S-meter into two rows
     spr.fillRect(15 + x, 7 + y, 4 * 17 - 2, 2, TH.bg);
@@ -513,7 +535,7 @@ static void drawStereoIndicator(int x, int y, bool stereo = true)
 //
 static void drawAltStereoIndicator(int x, int y, bool stereo = true)
 {
-  if(stereo)
+  if (stereo)
   {
     spr.drawCircle(x - 4, y, 7, TH.stereo_icon);
     spr.drawCircle(x + 4, y, 7, TH.stereo_icon);
@@ -539,12 +561,12 @@ static void drawLongStationName(const char *name, int x, int y)
   int width = spr.textWidth(name, 2);
   spr.setTextColor(TH.rds_text, TH.bg);
 
-  if((x + width) >= 320)
+  if ((x + width) >= 320)
   {
     spr.setTextDatum(TL_DATUM);
     spr.drawString(name, x, y, 2);
   }
-  else if(width <= 60)
+  else if (width <= 60)
   {
     spr.setTextDatum(TC_DATUM);
     spr.drawString(name, x + (320 - x) / 3, y, 2);
@@ -561,16 +583,18 @@ static void drawLongStationName(const char *name, int x, int y)
 //
 static bool drawWiFiStatus(const char *statusLine1, const char *statusLine2, int x, int y)
 {
-  if(statusLine1 || statusLine2)
+  if (statusLine1 || statusLine2)
   {
     // Draw two lines of network status
     spr.setTextDatum(TC_DATUM);
     spr.setTextColor(TH.rds_text, TH.bg);
-    if(statusLine1) spr.drawString(statusLine1, x, y, 2);
-    if(statusLine2) spr.drawString(statusLine2, x, y+17, 2);
-    return(true);
+    if (statusLine1)
+      spr.drawString(statusLine1, x, y, 2);
+    if (statusLine2)
+      spr.drawString(statusLine2, x, y + 17, 2);
+    return (true);
   }
-  return(false);
+  return (false);
 }
 
 static void drawLayoutSmeter(const char *statusLine1, const char *statusLine2)
@@ -589,12 +613,11 @@ static void drawLayoutSmeter(const char *statusLine1, const char *statusLine2)
 
   // Draw band and mode
   drawBandAndMode(
-    getCurrentBand()->bandName,
-    bandModeDesc[currentMode],
-    BAND_OFFSET_X, BAND_OFFSET_Y
-  );
+      getCurrentBand()->bandName,
+      bandModeDesc[currentMode],
+      BAND_OFFSET_X, BAND_OFFSET_Y);
 
-  if(switchThemeEditor())
+  if (switchThemeEditor())
   {
     spr.setTextDatum(TR_DATUM);
     spr.setTextColor(TH.text_warn, TH.bg);
@@ -603,32 +626,37 @@ static void drawLayoutSmeter(const char *statusLine1, const char *statusLine2)
 
   // Draw frequency, units, and optionally highlight a digit
   drawFrequency(
-    currentFrequency,
-    FREQ_OFFSET_X, FREQ_OFFSET_Y,
-    FUNIT_OFFSET_X, FUNIT_OFFSET_Y,
-    currentCmd == CMD_FREQ ? getFreqInputPos() + (pushAndRotate ? 0x80 : 0) : 100
-  );
+      currentFrequency,
+      FREQ_OFFSET_X, FREQ_OFFSET_Y,
+      FUNIT_OFFSET_X, FUNIT_OFFSET_Y,
+      currentCmd == CMD_FREQ ? getFreqInputPos() + (pushAndRotate ? 0x80 : 0) : 100);
 
   // Show station or channel name, if present
-  if(*getStationName() == 0xFF)
+  if (*getStationName() == 0xFF)
+  {
     drawLongStationName(getStationName() + 1, MENU_OFFSET_X + 1 + 76 + MENU_DELTA_X + 2, RDS_OFFSET_Y);
-  else if(*getStationName())
+    shouldCycle = true;
+  }
+  else if (*getStationName())
+  {
     drawStationName(getStationName(), RDS_OFFSET_X, RDS_OFFSET_Y);
+    shouldCycle = false;
+  }
 
   // Draw band scale
-  drawSmallScale(isSSB()? (currentFrequency + currentBFO/1000) : currentFrequency, 120);
+  drawSmallScale(isSSB() ? (currentFrequency + currentBFO / 1000) : currentFrequency, 120);
 
   // Draw left-side menu/info bar
   // @@@ FIXME: Frequency display (above) intersects the side bar!
   drawSideBar(currentCmd, ALT_MENU_OFFSET_X, ALT_MENU_OFFSET_Y, MENU_DELTA_X);
 
   // Indicate FM pilot detection (stereo indicator)
-  drawAltStereoIndicator(ALT_STEREO_OFFSET_X, ALT_STEREO_OFFSET_Y, (currentMode==FM) && rx.getCurrentPilot());
+  drawAltStereoIndicator(ALT_STEREO_OFFSET_X, ALT_STEREO_OFFSET_Y, (currentMode == FM) && rx.getCurrentPilot());
 
-  if(!drawWiFiStatus(statusLine1, statusLine2, STATUS_OFFSET_X, STATUS_OFFSET_Y))
+  if (!drawWiFiStatus(statusLine1, statusLine2, STATUS_OFFSET_X, STATUS_OFFSET_Y))
   {
     // Show radio text if present, else show S & SN meters
-    if(*getRadioText() || *getProgramInfo())
+    if (*getRadioText() || *getProgramInfo())
       drawRadioText(STATUS_OFFSET_Y, STATUS_OFFSET_Y + 25);
     else
     {
@@ -656,12 +684,11 @@ void drawLayoutDefault(const char *statusLine1, const char *statusLine2)
 
   // Draw band and mode
   drawBandAndMode(
-    getCurrentBand()->bandName,
-    bandModeDesc[currentMode],
-    BAND_OFFSET_X, BAND_OFFSET_Y
-  );
+      getCurrentBand()->bandName,
+      bandModeDesc[currentMode],
+      BAND_OFFSET_X, BAND_OFFSET_Y);
 
-  if(switchThemeEditor())
+  if (switchThemeEditor())
   {
     spr.setTextDatum(TR_DATUM);
     spr.setTextColor(TH.text_warn, TH.bg);
@@ -670,17 +697,23 @@ void drawLayoutDefault(const char *statusLine1, const char *statusLine2)
 
   // Draw frequency, units, and optionally highlight a digit
   drawFrequency(
-    currentFrequency,
-    FREQ_OFFSET_X, FREQ_OFFSET_Y,
-    FUNIT_OFFSET_X, FUNIT_OFFSET_Y,
-    currentCmd == CMD_FREQ ? getFreqInputPos() + (pushAndRotate ? 0x80 : 0) : 100
-  );
+      currentFrequency,
+      FREQ_OFFSET_X, FREQ_OFFSET_Y,
+      FUNIT_OFFSET_X, FUNIT_OFFSET_Y,
+      currentCmd == CMD_FREQ ? getFreqInputPos() + (pushAndRotate ? 0x80 : 0) : 100);
 
   // Show station or channel name, if present
-  if(*getStationName() == 0xFF)
+
+  if (*getStationName() == 0xFF)
+  {
     drawLongStationName(getStationName() + 1, MENU_OFFSET_X + 1 + 76 + MENU_DELTA_X + 2, RDS_OFFSET_Y);
-  else if(*getStationName())
+    shouldCycle = true;
+  }
+  else if (*getStationName())
+  {
     drawStationName(getStationName(), RDS_OFFSET_X, RDS_OFFSET_Y);
+    shouldCycle = false;
+  }
 
   // Draw left-side menu/info bar
   // @@@ FIXME: Frequency display (above) intersects the side bar!
@@ -690,15 +723,15 @@ void drawLayoutDefault(const char *statusLine1, const char *statusLine2)
   drawSMeter(getStrength(rssi), METER_OFFSET_X, METER_OFFSET_Y);
 
   // Indicate FM pilot detection (stereo indicator)
-  drawStereoIndicator(METER_OFFSET_X, METER_OFFSET_Y, (currentMode==FM) && rx.getCurrentPilot());
+  drawStereoIndicator(METER_OFFSET_X, METER_OFFSET_Y, (currentMode == FM) && rx.getCurrentPilot());
 
-  if(!drawWiFiStatus(statusLine1, statusLine2, STATUS_OFFSET_X, STATUS_OFFSET_Y))
+  if (!drawWiFiStatus(statusLine1, statusLine2, STATUS_OFFSET_X, STATUS_OFFSET_Y))
   {
     // Show radio text if present, else show frequency scale
-    if(*getRadioText() || *getProgramInfo())
+    if (*getRadioText() || *getProgramInfo())
       drawRadioText(STATUS_OFFSET_Y, STATUS_OFFSET_Y + 25);
     else
-      drawScale(isSSB()? (currentFrequency + currentBFO/1000) : currentFrequency);
+      drawScale(isSSB() ? (currentFrequency + currentBFO / 1000) : currentFrequency);
   }
 }
 
@@ -707,71 +740,71 @@ void drawLayoutDefault(const char *statusLine1, const char *statusLine2)
 //
 void drawScreen(const char *statusLine1, const char *statusLine2)
 {
-  if(sleepOn()) return;
+  if (sleepOn())
+    return;
 
   // Clear screen buffer
   spr.fillSprite(TH.bg);
 
   // About screen is a special case
-  if(currentCmd==CMD_ABOUT)
+  if (currentCmd == CMD_ABOUT)
   {
     drawAbout();
     return;
   }
 
-  switch(uiLayoutIdx)
+  switch (uiLayoutIdx)
   {
-    case UI_SMETER:
-      drawLayoutSmeter(statusLine1, statusLine2);
-      break;
-    default:
-      drawLayoutDefault(statusLine1, statusLine2);
-      break;
+  case UI_SMETER:
+    drawLayoutSmeter(statusLine1, statusLine2);
+    break;
+  default:
+    drawLayoutDefault(statusLine1, statusLine2);
+    break;
   }
 
 #ifdef ENABLE_HOLDOFF
   // Update if not tuning
-  if(!tuning_flag)
+  if (!tuning_flag)
   {
     spr.pushSprite(0, 0);
   }
 #else
 
-int maxround = 8;
-spr.setTextDatum(TL_DATUM);
+  int maxround = 8;
+  spr.setTextDatum(TL_DATUM);
 
-String messages[] = {
-  dateNow,
-  weatherStr,
-  tempStr + " " + rainStr,
-  windStr,
-  "AQI: " + String(aqiValue) + " PM25: " + String(pm25Value) + " ug/m3",
-  forecastText[0],
-  forecastText[1],
-  forecastText[2]
-};
+  String messages[] = {
+      dateNow,
+      weatherStr,
+      tempStr + " " + rainStr,
+      windStr,
+      "AQI: " + String(aqiValue) + " PM25: " + String(pm25Value) + " ug/m3",
+      forecastText[0],
+      forecastText[1],
+      forecastText[2]};
 
-if (shouldCycle)
-{
-  spr.drawString(dateNow, 100, 23, 2);
-}
-else
-{
-  if (roundDisplay >= 0 && roundDisplay < maxround)
-    spr.drawString(messages[roundDisplay], 100, 23, 2);
-  else
-    spr.drawString(dateNow, 100, 23, 2);
-
-  if (!textStop)
+  if (shouldCycle)
   {
-    roundLoop++;
-    if (roundLoop >= 2)
+    spr.drawString(dateNow, 100, 23, 2);
+  }
+  else
+  {
+    if (roundDisplay >= 0 && roundDisplay < maxround)
+      spr.drawString(messages[roundDisplay], 100, 23, 2);
+    else
+      spr.drawString(dateNow, 100, 23, 2);
+
+    if (!textStop)
     {
-      roundDisplay = (roundDisplay + 1) % maxround;
-      roundLoop = 0;
+      roundLoop++;
+      if (roundLoop >= 2)
+      {
+        roundDisplay = (roundDisplay + 1) % maxround;
+        roundLoop = 0;
+      }
     }
   }
-}
 
   // No hold off
   spr.pushSprite(0, 0);

@@ -288,17 +288,14 @@ static const char *findNameByFreq(uint16_t freq, const NamedFreq *db, uint16_t d
   return(0);
 }
 
-static const char *findScheduleByFreq(uint16_t freq, bool same)
+static const char *findScheduleByFreq(uint16_t freq, bool periodic)
 {
   uint8_t hour, minute;
 
-  if (currentMode == FM) {
-    shouldCycle = false;  // ✅ ปิดการวนชื่อสถานีใน FM mode
-    return 0;
-  }
+  if(currentMode==FM) return(0);
 
   // Must have valid time
-  if (!clockGetHM(&hour, &minute)) return 0;
+  if(!clockGetHM(&hour, &minute)) return(0);
 
   static uint16_t last_freq = 0;
   static uint8_t last_minute = 255;
@@ -307,37 +304,30 @@ static const char *findScheduleByFreq(uint16_t freq, bool same)
   const StationSchedule *entry = NULL;
 
   // Try EIBI lookup at the next offset and same freq
-  if (same && freq == last_freq && last_offset != (size_t)-1)
+  if(periodic && freq == last_freq && last_offset != (size_t)-1)
   {
     entry = eibiAtSameFreq(hour, minute, &last_offset, false);
 
     // Try EIBI lookup at the first offset and same freq
-    if (!entry)
+    if(!entry)
     {
       last_offset = first_offset;
       entry = eibiAtSameFreq(hour, minute, &last_offset, true);
     }
-
-    shouldCycle = true;
   }
 
   // Try new EIBI lookup if not found or once per minute
-  if (!same || (!entry && last_offset != (size_t)-1) || last_minute != minute)
+  if(!periodic || (!entry && last_offset != (size_t)-1) || last_minute != minute)
   {
     last_freq = freq;
     last_minute = minute;
     last_offset = (size_t)-1;
     entry = eibiLookup(freq, hour, minute, &last_offset);
     first_offset = last_offset = entry ? last_offset : (size_t)-1;
-
-    // ✅ ตรวจสอบว่ามีหลาย offset หรือไม่
-    if (first_offset != (size_t)-1 && last_offset != (size_t)-1 && first_offset != last_offset)
-      shouldCycle = true;
-    else
-      shouldCycle = false;
   }
 
-  return (entry ? entry->name : 0);
+  // Return just the station name
+  return(entry? entry->name : 0);
 }
 
 bool identifyFrequency(uint16_t freq, bool same)
