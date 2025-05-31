@@ -9,6 +9,8 @@
 #include <ctype.h>
 #include <string.h>
 
+#include <Globals.h>
+
 #define EIBI_PATH "/schedules.bin"
 #define TEMP_PATH "/schedules.tmp"
 #ifndef EIBI_URL
@@ -378,6 +380,7 @@ static bool eibiParseLine(const char *line, StationSchedule &entry)
 
 bool eibiLoadSchedule()
 {
+  textStop = true;
   static const char *eibiMessage = "Loading EiBi Schedule";
   HTTPClient http;
 

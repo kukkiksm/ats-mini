@@ -253,13 +253,17 @@ bool ntpSyncTime()
 {
   if (WiFi.status() == WL_CONNECTED)
   {
+    configTime(getCurrentUTCOffset() * 1800, 0, "pool.ntp.org");
     ntpClient.update();
 
     if (ntpClient.isTimeSet())
+    {
+      clockStoreLastSynced(); // ✅ เรียกฟังก์ชันแทนที่เขียนตรง ๆ
       return (clockSet(
           ntpClient.getHours(),
           ntpClient.getMinutes(),
           ntpClient.getSeconds()));
+    }
   }
   return (false);
 }
