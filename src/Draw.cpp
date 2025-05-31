@@ -640,7 +640,7 @@ static void drawLayoutSmeter(const char *statusLine1, const char *statusLine2)
   else if (*getStationName())
   {
     drawStationName(getStationName(), RDS_OFFSET_X, RDS_OFFSET_Y);
-    shouldCycle = false;
+    shouldCycle = true;
   }
 
   // Draw band scale
@@ -712,7 +712,7 @@ void drawLayoutDefault(const char *statusLine1, const char *statusLine2)
   else if (*getStationName())
   {
     drawStationName(getStationName(), RDS_OFFSET_X, RDS_OFFSET_Y);
-    shouldCycle = false;
+    shouldCycle = true;
   }
 
   // Draw left-side menu/info bar
