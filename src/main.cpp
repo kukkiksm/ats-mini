@@ -268,6 +268,8 @@ ICACHE_RAM_ATTR void rotaryEncoder()
   {
     encoderCount = encoderStatus == DIR_CW ? 1 : -1;
     seekStop = true;
+    textStop = false;
+    shouldCycle = false;
   }
 }
 
