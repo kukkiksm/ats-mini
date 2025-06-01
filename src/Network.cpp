@@ -728,79 +728,69 @@ static const String webMemoryPage()
 );
 }
 
-
 const String webConfigPage()
 {
   preferences.begin("configData", true);
   String ssid1 = preferences.getString("wifissid1", "");
   String pass1 = preferences.getString("wifipass1", "");
+  String ssid2 = preferences.getString("wifissid2", "");
+  String pass2 = preferences.getString("wifipass2", "");
+  String ssid3 = preferences.getString("wifissid3", "");
+  String pass3 = preferences.getString("wifipass3", "");
   validLatitude = preferences.getString("latitude", "14.10");
   validLongitude = preferences.getString("longitude", "99.87");
   validUnit = preferences.getString("unit", "C");
   preferences.end();
 
   return webPage(
-      "<H1>ATS-Mini Config</H1>"
-      "<P ALIGN='CENTER'>"
-      "<A HREF='/'>Status</A>&nbsp;|&nbsp;<A HREF='/memory'>Memory</A>"
-      "</P>"
-      "<FORM ACTION='/setconfig' METHOD='POST'>"
-      "<TABLE COLUMNS=2>"
+"<H1>ATS-Mini Config</H1>"
+"<P ALIGN='CENTER'>"
+  "<A HREF='/'>Status</A>"
+  "&nbsp;|&nbsp;<A HREF='/memory'>Memory</A>"
+"</P>"
+"<FORM ACTION='/setconfig' METHOD='POST'>"
+  "<TABLE COLUMNS=2>"
 
-      // 🔹 WiFi 1
-      "<TR><TH COLSPAN=2 CLASS='HEADING'>WiFi Settings</TH></TR>"
-      "<TR><TD CLASS='LABEL'>SSID</TD><TD>" +
-      webInputField("wifissid1", ssid1) + "</TD></TR>"
-                                          "<TR><TD CLASS='LABEL'>Password</TD><TD>"
-                                          "<div style='display:flex; align-items:center;'>"
-                                          "<input type='password' id='wifipass1' name='wifipass1' value='" +
-      pass1 + "' style='flex:1;'>"
-              "<button type='button' onclick=\"togglePassword('wifipass1', this)\">&#128065;</button>"
-              "</div>"
-              "</TD></TR>"
+  // Login Section
+  "<TR><TH COLSPAN=2 CLASS='HEADING'>Login Credentials</TH></TR>"
+  "<TR><TD CLASS='LABEL'>Username</TD><TD>" + webInputField("username", loginUsername) + "</TD></TR>"
+  "<TR><TD CLASS='LABEL'>Password</TD><TD>" + webInputField("password", loginPassword, true) + "</TD></TR>"
 
-              // 🔹 Location
-              "<TR><TH COLSPAN=2 CLASS='HEADING'>Location</TH></TR>"
-              "<TR><TD CLASS='LABEL'>Latitude</TD><TD><INPUT TYPE='TEXT' NAME='latitude' VALUE='" +
-      validLatitude + "'></TD></TR>"
-                      "<TR><TD CLASS='LABEL'>Longitude</TD><TD><INPUT TYPE='TEXT' NAME='longitude' VALUE='" +
-      validLongitude + "'></TD></TR>"
-                       "<TR><TD CLASS='LABEL'>Unit</TD><TD><SELECT NAME='unit'>"
-                       "<OPTION VALUE='C'" +
-      (validUnit == "C" ? " SELECTED" : "") + ">Celsius</OPTION>"
-                                              "<OPTION VALUE='F'" +
-      (validUnit == "F" ? " SELECTED" : "") + ">Fahrenheit</OPTION>"
-                                              "</SELECT></TD></TR>"
+  // WiFi 1
+  "<TR><TH COLSPAN=2 CLASS='HEADING'>WiFi Network 1</TH></TR>"
+  "<TR><TD CLASS='LABEL'>SSID</TD><TD>" + webInputField("wifissid1", ssid1) + "</TD></TR>"
+  "<TR><TD CLASS='LABEL'>Password</TD><TD>" + webInputField("wifipass1", pass1, true) + "</TD></TR>"
 
-                                              // 🔹 Time/Theme
-                                              "<TR><TH COLSPAN=2 CLASS='HEADING'>Time & Theme</TH></TR>"
-                                              "<TR><TD CLASS='LABEL'>Time Zone</TD><TD><SELECT NAME='utcoffset'>" +
-      webUtcOffsetSelector() + "</SELECT></TD></TR>"
-                               "<TR><TD CLASS='LABEL'>Theme</TD><TD><SELECT NAME='theme'>" +
-      webThemeSelector() + "</SELECT></TD></TR>"
+  // Location
+  "<TR><TH COLSPAN=2 CLASS='HEADING'>Location Settings</TH></TR>"
+  "<TR><TD CLASS='LABEL'>Latitude</TD><TD>" + webInputField("latitude", validLatitude) + "</TD></TR>"
+  "<TR><TD CLASS='LABEL'>Longitude</TD><TD>" + webInputField("longitude", validLongitude) + "</TD></TR>"
+  "<TR><TD CLASS='LABEL'>Unit</TD><TD>"
+    "<SELECT NAME='unit'>"
+      "<OPTION VALUE='C'" + (validUnit=="C"? " SELECTED":"") + ">Celsius</OPTION>"
+      "<OPTION VALUE='F'" + (validUnit=="F"? " SELECTED":"") + ">Fahrenheit</OPTION>"
+    "</SELECT>"
+  "</TD></TR>"
 
-                           // 🔹 Options
-                           "<TR><TD CLASS='LABEL'>Reverse Scrolling</TD><TD><INPUT TYPE='CHECKBOX' NAME='scroll' VALUE='on'" +
-      (scrollDirection < 0 ? " CHECKED" : "") + "></TD></TR>"
-                                                "<TR><TD CLASS='LABEL'>Zoomed Menu</TD><TD><INPUT TYPE='CHECKBOX' NAME='zoom' VALUE='on'" +
-      (zoomMenu ? " CHECKED" : "") + "></TD></TR>"
+  // WiFi 2
+  "<TR><TH COLSPAN=2 CLASS='HEADING'>WiFi Network 2</TH></TR>"
+  "<TR><TD CLASS='LABEL'>SSID</TD><TD>" + webInputField("wifissid2", ssid2) + "</TD></TR>"
+  "<TR><TD CLASS='LABEL'>Password</TD><TD>" + webInputField("wifipass2", pass2, true) + "</TD></TR>"
 
-                                     // 🔹 Submit
-                                     "<TR><TH COLSPAN=2 CLASS='HEADING'><INPUT TYPE='SUBMIT' VALUE='Save'></TH></TR>"
-                                     "</TABLE>"
-                                     "</FORM>"
+  // WiFi 3
+  "<TR><TH COLSPAN=2 CLASS='HEADING'>WiFi Network 3</TH></TR>"
+  "<TR><TD CLASS='LABEL'>SSID</TD><TD>" + webInputField("wifissid3", ssid3) + "</TD></TR>"
+  "<TR><TD CLASS='LABEL'>Password</TD><TD>" + webInputField("wifipass3", pass3, true) + "</TD></TR>"
 
-                                     // 🔹 Password toggle JS
-                                     "<SCRIPT>"
-                                     "function togglePassword(id, btn) {"
-                                     "  var x = document.getElementById(id);"
-                                     "  if (x.type === 'password') {"
-                                     "    x.type = 'text';"
-                                     "    btn.innerHTML = '&#128064;';"
-                                     "  } else {"
-                                     "    x.type = 'password';"
-                                     "    btn.innerHTML = '&#128065;';"
-                                     "  }"
-                                     "}"
-                                     "</SCRIPT>");
+  // Extra Settings
+  "<TR><TH COLSPAN=2 CLASS='HEADING'>Other Settings</TH></TR>"
+  "<TR><TD CLASS='LABEL'>Time Zone</TD><TD><SELECT NAME='utcoffset'>" + webUtcOffsetSelector() + "</SELECT></TD></TR>"
+  "<TR><TD CLASS='LABEL'>Theme</TD><TD><SELECT NAME='theme'>" + webThemeSelector() + "</SELECT></TD></TR>"
+  "<TR><TD CLASS='LABEL'>Reverse Scrolling</TD><TD><INPUT TYPE='CHECKBOX' NAME='scroll' VALUE='on'" + (scrollDirection<0? " CHECKED ":"") + "></TD></TR>"
+  "<TR><TD CLASS='LABEL'>Zoomed Menu</TD><TD><INPUT TYPE='CHECKBOX' NAME='zoom' VALUE='on'" + (zoomMenu? " CHECKED ":"") + "></TD></TR>"
+
+  "<TR><TH COLSPAN=2 CLASS='HEADING'><INPUT TYPE='SUBMIT' VALUE='Save'></TH></TR>"
+  "</TABLE>"
+"</FORM>"
+);
 }
