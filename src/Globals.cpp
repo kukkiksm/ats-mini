@@ -37,20 +37,5 @@ void clockStoreLastSynced() {
   lastSyncedMicros = micros();
 }
 
-const char* clockGetDate() {
-  static char dateStr[30];
-  struct tm timeinfo;
-
-  if (!getLocalTime(&timeinfo)) {
-    return "wait for update";
-  }
-
-  if (timeinfo.tm_year <= 70) {
-    return "wait for update";
-  }
-
-  strftime(dateStr, sizeof(dateStr), "%A %d %B %Y", &timeinfo);
-  return dateStr;
-}
 
 
