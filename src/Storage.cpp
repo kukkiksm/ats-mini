@@ -297,6 +297,7 @@ void eepromLoadConfig()
   rx.setVolume(volume);
 }
 
+
 #ifndef FORMAT_LITTLEFS_IF_FAILED
 #define FORMAT_LITTLEFS_IF_FAILED true
 #endif

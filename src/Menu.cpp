@@ -1068,10 +1068,35 @@ void selectBand(uint8_t idx, bool drawLoadingSSB)
   resetFreqInputPos();
 }
 
+// kkikk
+const char *clockGetDate()
+{
+  static char dateStr[30];
+  struct tm timeinfo;
+
+  if (!getLocalTime(&timeinfo))
+  {
+    return "wait for update";
+  }
+
+  if (timeinfo.tm_year <= 70)
+  {
+    return "wait for update";
+  }
+
+  int offsetMinutes = getCurrentUTCOffset() * 30;
+  time_t raw = mktime(&timeinfo);
+  raw += offsetMinutes * 60;
+  localtime_r(&raw, &timeinfo);
+
+  strftime(dateStr, sizeof(dateStr), "%A %d %B %Y", &timeinfo);
+  return dateStr;
+}
+
+
 //
 // Draw functions
 //
-
 static void drawCommon(const char *title, int x, int y, int sx, bool cursor = false)
 {
   spr.setTextDatum(MC_DATUM);
@@ -1608,30 +1633,6 @@ static void drawScrollDir(int x, int y, int sx)
     spr.fillTriangle(39 + x + (sx / 2) - 5, 45 + y, 39 + x + (sx / 2) + 5, 45 + y, 39 + x + (sx / 2), 45 + y - 5, TH.menu_param);
   else
     spr.fillTriangle(39 + x + (sx / 2) - 5, 85 + y, 39 + x + (sx / 2) + 5, 85 + y, 39 + x + (sx / 2), 85 + y + 5, TH.menu_param);
-}
-
-const char *clockGetDate()
-{
-  static char dateStr[30];
-  struct tm timeinfo;
-
-  if (!getLocalTime(&timeinfo))
-  {
-    return "wait for update";
-  }
-
-  if (timeinfo.tm_year <= 70)
-  {
-    return "wait for update";
-  }
-
-  int offsetMinutes = getCurrentUTCOffset() * 30;
-  time_t raw = mktime(&timeinfo);
-  raw += offsetMinutes * 60;
-  localtime_r(&raw, &timeinfo);
-
-  strftime(dateStr, sizeof(dateStr), "%A %d %B %Y", &timeinfo);
-  return dateStr;
 }
 
 static void drawInfo(int x, int y, int sx)
