@@ -64,21 +64,12 @@ void eepromTickTime()
   }
 }
 
-void drawEepromIndicator(int x, int y)
+// Return true if EEPROM has been written
+bool eepromIsWritten()
 {
-  // If need to draw EEPROM icon...
-  if (showEepromFlag || switchThemeEditor())
-  {
-    // Draw EEPROM write request icon
-    spr.fillRect(x + 3, y + 2, 3, 5, TH.save_icon);
-    spr.fillTriangle(x + 1, y + 7, x + 7, y + 7, x + 4, y + 10, TH.save_icon);
-    spr.drawLine(x, y + 12, x, y + 13, TH.save_icon);
-    spr.drawLine(x, y + 13, x + 8, y + 13, TH.save_icon);
-    spr.drawLine(x + 8, y + 13, x + 8, y + 12, TH.save_icon);
-
-    // Icon drawn
-    showEepromFlag = false;
-  }
+  bool result = showEepromFlag;
+  showEepromFlag = false;
+  return (result);
 }
 
 // Indirectly forces the reset by setting EEPROM_VERSION = 0, which gets
@@ -203,6 +194,7 @@ void eepromSaveConfig()
   EEPROM.write(addr++, currentSquelch);              // Stores the current Squelch value
   EEPROM.write(addr++, FmRegionIdx);                 // Stores the current FM region value
   EEPROM.write(addr++, uiLayoutIdx);                 // Stores the current UI Layout index value
+  EEPROM.write(addr++, bleModeIdx);                  // Stores the current Bluetooth mode index value
   EEPROM.commit();
 
   addr = EEPROM_SETP_ADDR;
@@ -280,6 +272,8 @@ void eepromLoadConfig()
   FmRegionIdx = EEPROM.read(addr++);              // Reads the current FM region value
   FmRegionIdx = FmRegionIdx >= getTotalFmRegions() ? 0 : FmRegionIdx;
   uiLayoutIdx = EEPROM.read(addr++); // Reads stored UI Layout index value
+  bleModeIdx = EEPROM.read(addr++);  // Reads stored Bluetooth mode index value
+  bleModeIdx = bleModeIdx >= getTotalBleModes() ? 0 : bleModeIdx;
 
   addr = EEPROM_SETP_ADDR;
   for (int i = 0; i < getTotalBands(); i++)
@@ -297,7 +291,6 @@ void eepromLoadConfig()
   rx.setVolume(volume);
 }
 
-
 #ifndef FORMAT_LITTLEFS_IF_FAILED
 #define FORMAT_LITTLEFS_IF_FAILED true
 #endif
@@ -308,6 +301,7 @@ bool diskInit(bool force)
   {
     Serial.println("❌ LittleFS mount failed!");
   }
+
   if (force)
   {
     LittleFS.end();

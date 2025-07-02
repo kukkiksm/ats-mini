@@ -15,7 +15,6 @@ const char *getMACAddress();
 
 // Convert RSSI to signal strength
 int getStrength(int rssi);
-int getInterpolatedStrength(int rssi);
 
 // Set, reset, toggle, or query switches
 bool sleepOn(int x = 2);
@@ -33,5 +32,8 @@ void clockRefreshTime();
 
 // Check if given memory entry belongs to a band
 bool isMemoryInBand(const Band *band, const Memory *memory);
+
+// Check if given frequency belongs to a band
+bool isFreqInBand(const Band *band, uint16_t freq);
 
 #endif // UTILS_H

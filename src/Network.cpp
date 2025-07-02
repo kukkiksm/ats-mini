@@ -1,9 +1,9 @@
 #include "Common.h"
 #include "Storage.h"
 #include "Themes.h"
-#include "Storage.h"
 #include "Utils.h"
 #include "Menu.h"
+#include "Draw.h"
 
 #include <WiFi.h>
 #include <WiFiUdp.h>
@@ -12,7 +12,6 @@
 #include <NTPClient.h>
 #include <Preferences.h>
 #include <ESPmDNS.h>
-
 #include "Updatedata.h"
 #include "Globals.h"
 
@@ -21,7 +20,7 @@
 //
 // Access Point (AP) mode settings
 //
-static const char *apSSID = "ATS-Mini";
+static const char *apSSID = RECEIVER_NAME;
 static const char *apPWD = 0;       // No password
 static const int apChannel = 10;    // WiFi channel number (1..13)
 static const bool apHideMe = false; // TRUE: disable SSID broadcast
@@ -123,25 +122,6 @@ char *getWiFiIPAddress()
 {
   static char ip[16];
   return strcpy(ip, WiFi.status() == WL_CONNECTED ? WiFi.localIP().toString().c_str() : "");
-}
-
-void drawWiFiIndicator(int x, int y)
-{
-  int8_t status = getWiFiStatus();
-
-  // If need to draw WiFi icon...
-  if (status || switchThemeEditor())
-  {
-    uint16_t color = (status > 0) ? TH.wifi_icon_conn : TH.wifi_icon;
-
-    // For the editor, alternate between WiFi states every ~8 seconds
-    if (switchThemeEditor())
-      color = millis() & 0x2000 ? TH.wifi_icon_conn : TH.wifi_icon;
-
-    spr.drawSmoothArc(x, 15 + y, 14, 13, 150, 210, color, TH.bg);
-    spr.drawSmoothArc(x, 15 + y, 9, 8, 150, 210, color, TH.bg);
-    spr.drawSmoothArc(x, 15 + y, 4, 3, 150, 210, color, TH.bg);
-  }
 }
 
 //
@@ -453,19 +433,27 @@ void webSetConfig(AsyncWebServerRequest *request)
     eepromSave = true;
   }
 
-  // ✅ Save location //kkikk
+  // Save latitude
   if (request->hasParam("latitude", true))
   {
     preferences.putString("latitude", request->getParam("latitude", true)->value());
+    eepromSave = true;
   }
+
+  // Save longitude
   if (request->hasParam("longitude", true))
   {
     preferences.putString("longitude", request->getParam("longitude", true)->value());
+    eepromSave = true;
   }
+
+  // Save unit
   if (request->hasParam("unit", true))
   {
     preferences.putString("unit", request->getParam("unit", true)->value());
+    eepromSave = true;
   }
+
 
   // Save scroll direction and menu zoom
   scrollDirection = request->hasParam("scroll", true) ? -1 : 1;
@@ -733,6 +721,7 @@ static const String webMemoryPage()
       "<TABLE COLUMNS=2>" +
       items + "</TABLE>");
 }
+
 
 const String webConfigPage()
 {

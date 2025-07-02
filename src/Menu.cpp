@@ -3,6 +3,7 @@
 #include "Themes.h"
 #include "Utils.h"
 #include "Menu.h"
+#include "Draw.h"
 #include "EIBI.h"
 #include "Globals.h"
 
@@ -82,6 +83,7 @@ Band *getCurrentBand() { return (&bands[bandIdx]); }
 #define MENU_AVC 9
 #define MENU_SOFTMUTE 10
 #define MENU_SETTINGS 11
+#define MENU_SCAN 12
 
 int8_t menuIdx = MENU_VOLUME;
 
@@ -99,6 +101,7 @@ static const char *menu[] =
         "AVC",
         "SoftMute",
         "Settings",
+        //  "Scan",
 };
 
 //
@@ -117,6 +120,7 @@ static const char *menu[] =
 #define MENU_SLEEP 9
 #define MENU_SLEEPMODE 10
 #define MENU_LOADEIBI 11
+#define MENU_BLEMODE 14
 #define MENU_WIFIMODE 12
 #define MENU_ABOUT 13
 
@@ -136,6 +140,7 @@ static const char *settings[] =
         "Sleep",
         "Sleep Mode",
         "Load EiBi",
+        //  "Bluetooth",
         "Wi-Fi",
         "About",
 };
@@ -199,29 +204,31 @@ static const char *sleepModeDesc[] =
 
 //
 // UTC Offset Menu
+// FIXME: add more offsets https://en.wikipedia.org/wiki/List_of_UTC_offsets
 //
 uint8_t utcOffsetIdx = 8;
 const UTCOffset utcOffsets[] =
     {
-        {-8 * 2, "UTC-8", "Fairbanks"},
-        {-7 * 2, "UTC-7", "San Francisco"},
-        {-6 * 2, "UTC-6", "Denver"},
-        {-5 * 2, "UTC-5", "Houston"},
-        {-4 * 2, "UTC-4", "New York"},
-        {-3 * 2, "UTC-3", "Rio de Janeiro"},
-        {-2 * 2, "UTC-2", "Sandwich Islands"},
-        {-1 * 2, "UTC-1", "Nuuk"},
-        {0 * 2, "UTC+0", "Reykjavik"},
-        {1 * 2, "UTC+1", "London"},
-        {2 * 2, "UTC+2", "Berlin"},
-        {3 * 2, "UTC+3", "Moscow"},
-        {4 * 2, "UTC+4", "Yerevan"},
-        {5 * 2, "UTC+5", "Astana"},
-        {6 * 2, "UTC+6", "Omsk"},
-        {7 * 2, "UTC+7", "Novosibirsk"},
-        {8 * 2, "UTC+8", "Beijing"},
-        {9 * 2, "UTC+9", "Yakutsk"},
-        {10 * 2, "UTC+10", "Vladivostok"},
+        {-8 * 4, "UTC-8", "Fairbanks"},
+        {-7 * 4, "UTC-7", "San Francisco"},
+        {-6 * 4, "UTC-6", "Denver"},
+        {-5 * 4, "UTC-5", "Houston"},
+        {-4 * 4, "UTC-4", "New York"},
+        {-3 * 4, "UTC-3", "Rio de Janeiro"},
+        {-2 * 4, "UTC-2", "Sandwich Islands"},
+        {-1 * 4, "UTC-1", "Nuuk"},
+        {0 * 4, "UTC+0", "Reykjavik"},
+        {1 * 4, "UTC+1", "London"},
+        {2 * 4, "UTC+2", "Berlin"},
+        {3 * 4, "UTC+3", "Moscow"},
+        {4 * 4, "UTC+4", "Yerevan"},
+        {5 * 4, "UTC+5", "Astana"},
+        {5 * 4 + 2, "UTC+5:30", "Kolkata"},
+        {6 * 4, "UTC+6", "Omsk"},
+        {7 * 4, "UTC+7", "Novosibirsk"},
+        {8 * 4, "UTC+8", "Beijing"},
+        {9 * 4, "UTC+9", "Yakutsk"},
+        {10 * 4, "UTC+10", "Vladivostok"},
 };
 
 int getCurrentUTCOffset() { return (utcOffsets[utcOffsetIdx].offset); }
@@ -233,6 +240,16 @@ int getTotalUTCOffsets() { return (ITEM_COUNT(utcOffsets)); }
 uint8_t uiLayoutIdx = 0;
 static const char *uiLayoutDesc[] =
     {"Default", "S-Meter"};
+
+//
+// Bluetooth Mode Menu
+//
+
+uint8_t bleModeIdx = BLE_OFF;
+static const char *bleModeDesc[] =
+    {"Off", "DummyEcho"};
+
+int getTotalBleModes() { return (ITEM_COUNT(bleModeDesc)); }
 
 //
 // WiFi Mode Menu
@@ -576,6 +593,13 @@ static void doSleepMode(int dir)
   sleepModeIdx = wrap_range(sleepModeIdx, dir, 0, LAST_ITEM(sleepModeDesc));
 }
 
+static void doBleMode(int dir)
+{
+  uint8_t newBleModeIdx = wrap_range(bleModeIdx, dir, 0, LAST_ITEM(bleModeDesc));
+  bleInit(newBleModeIdx);
+  bleModeIdx = newBleModeIdx;
+}
+
 static void doWiFiMode(int dir)
 {
   wifiModeIdx = wrap_range(wifiModeIdx, dir, 0, LAST_ITEM(wifiModeDesc));
@@ -842,6 +866,13 @@ static void clickMenu(int cmd, bool shortPress)
     if (currentMode != FM)
       currentCmd = CMD_AVC;
     break;
+
+  case MENU_SCAN:
+    // Run a band scan around current frequency with the same
+    // step as scale resolution (10kHz for AM, 100kHz for FM)
+    drawMessage("Scanning...");
+    scanRun(currentFrequency, 10);
+    break;
   }
 }
 
@@ -887,6 +918,9 @@ static void clickSettings(int cmd, bool shortPress)
     break;
   case MENU_UTCOFFSET:
     currentCmd = CMD_UTCOFFSET;
+    break;
+  case MENU_BLEMODE:
+    currentCmd = CMD_BLEMODE;
     break;
   case MENU_WIFIMODE:
     currentCmd = CMD_WIFIMODE;
@@ -972,6 +1006,9 @@ bool doSideBar(uint16_t cmd, int dir)
   case CMD_SLEEPMODE:
     doSleepMode(scrollDirection * dir);
     break;
+  case CMD_BLEMODE:
+    doBleMode(scrollDirection * dir);
+    break;
   case CMD_WIFIMODE:
     doWiFiMode(scrollDirection * dir);
     break;
@@ -1024,7 +1061,7 @@ bool clickHandler(uint16_t cmd, bool shortPress)
     clickSeek(shortPress);
     break;
   case CMD_FREQ:
-    return clickFreq(shortPress);
+    return (clickFreq(shortPress));
   default:
     return (false);
   }
@@ -1039,6 +1076,10 @@ bool clickHandler(uint16_t cmd, bool shortPress)
 
 void selectBand(uint8_t idx, bool drawLoadingSSB)
 {
+  // Silence click on some hardware versions
+  // https://github.com/esp32-si4732/ats-mini/discussions/103
+  tempMuteOn(true);
+
   // Set band and mode
   bandIdx = min(idx, LAST_ITEM(bands));
   currentMode = bands[bandIdx].bandMode;
@@ -1066,37 +1107,15 @@ void selectBand(uint8_t idx, bool drawLoadingSSB)
 
   // Set default digit position based on the current step
   resetFreqInputPos();
+
+  // Unmute the sound
+  tempMuteOn(false);
 }
-
-// kkikk
-const char *clockGetDate()
-{
-  static char dateStr[30];
-  struct tm timeinfo;
-
-  if (!getLocalTime(&timeinfo))
-  {
-    return "wait for update";
-  }
-
-  if (timeinfo.tm_year <= 70)
-  {
-    return "wait for update";
-  }
-
-  int offsetMinutes = getCurrentUTCOffset() * 30;
-  time_t raw = mktime(&timeinfo);
-  raw += offsetMinutes * 60;
-  localtime_r(&raw, &timeinfo);
-
-  strftime(dateStr, sizeof(dateStr), "%A %d %B %Y", &timeinfo);
-  return dateStr;
-}
-
 
 //
 // Draw functions
 //
+
 static void drawCommon(const char *title, int x, int y, int sx, bool cursor = false)
 {
   spr.setTextDatum(MC_DATUM);
@@ -1228,7 +1247,6 @@ static void drawStep(int x, int y, int sx)
 static void drawSeek(int x, int y, int sx)
 {
   drawCommon(menu[MENU_SEEK], x, y, sx);
-  drawZoomedMenu(menu[MENU_SEEK]);
   spr.drawSmoothArc(40 + x + (sx / 2), 66 + y, 30, 27, 45, 180, TH.menu_param, TH.menu_bg);
   spr.fillTriangle(40 + x + (sx / 2) - 5, 66 + y - 32, 40 + x + (sx / 2) + 5, 66 + y - 27, 40 + x + (sx / 2) - 5, 66 + y - 22, TH.menu_param);
   spr.drawSmoothArc(40 + x + (sx / 2), 66 + y, 30, 27, 225, 360, TH.menu_param, TH.menu_bg);
@@ -1307,6 +1325,34 @@ static void drawSleepMode(int x, int y, int sx)
 
     spr.setTextDatum(MC_DATUM);
     spr.drawString(sleepModeDesc[abs((sleepModeIdx + count + i) % count)], 40 + x + (sx / 2), 64 + y + (i * 16), 2);
+  }
+}
+
+static void drawBleMode(int x, int y, int sx)
+{
+  drawCommon(settings[MENU_BLEMODE], x, y, sx, true);
+
+  int count = ITEM_COUNT(bleModeDesc);
+  for (int i = -2; i < 3; i++)
+  {
+    if (i == 0)
+    {
+      drawZoomedMenu(bleModeDesc[abs((bleModeIdx + count + i) % count)]);
+      spr.setTextColor(TH.menu_hl_text, TH.menu_hl_bg);
+    }
+    else
+    {
+      spr.setTextColor(TH.menu_item, TH.menu_bg);
+    }
+
+    // Prevent repeats for short menus
+    if (count < 5 && ((bleModeIdx + i) < 0 || (bleModeIdx + i) >= count))
+    {
+      continue;
+    }
+
+    spr.setTextDatum(MC_DATUM);
+    spr.drawString(bleModeDesc[abs((bleModeIdx + count + i) % count)], 40 + x + (sx / 2), 64 + y + (i * 16), 2);
   }
 }
 
@@ -1635,6 +1681,30 @@ static void drawScrollDir(int x, int y, int sx)
     spr.fillTriangle(39 + x + (sx / 2) - 5, 85 + y, 39 + x + (sx / 2) + 5, 85 + y, 39 + x + (sx / 2), 85 + y + 5, TH.menu_param);
 }
 
+const char *clockGetDate()
+{
+  static char dateStr[30];
+  struct tm timeinfo;
+
+  if (!getLocalTime(&timeinfo))
+  {
+    return "wait for update";
+  }
+
+  if (timeinfo.tm_year <= 70)
+  {
+    return "wait for update";
+  }
+
+  int offsetMinutes = getCurrentUTCOffset() * 30;
+  time_t raw = mktime(&timeinfo);
+  raw += offsetMinutes * 60;
+  localtime_r(&raw, &timeinfo);
+
+  strftime(dateStr, sizeof(dateStr), "%A %d %B %Y", &timeinfo);
+  return dateStr;
+}
+
 static void drawInfo(int x, int y, int sx)
 {
   char text[16];
@@ -1777,6 +1847,9 @@ void drawSideBar(uint16_t cmd, int x, int y, int sx)
     break;
   case CMD_SLEEPMODE:
     drawSleepMode(x, y, sx);
+    break;
+  case CMD_BLEMODE:
+    drawBleMode(x, y, sx);
     break;
   case CMD_WIFIMODE:
     drawWiFiMode(x, y, sx);

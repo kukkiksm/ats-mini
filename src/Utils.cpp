@@ -3,6 +3,7 @@
 #include "Themes.h"
 #include "Button.h"
 #include "Menu.h"
+#include "Draw.h"
 
 // SSB patch for whole SSBRX initialization string
 #include "patch_init.h"
@@ -34,7 +35,7 @@ const char *getVersion(bool shorter)
   static char versionString[35] = "\0";
 
   sprintf(versionString, "%s%sF/W: v%1.1d.%2.2d %s",
-    shorter ? "" : FIRMWARE_NAME,
+    shorter ? "" : RECEIVER_NAME,
     shorter ? "" : " ",
     APP_VERSION / 100,
     APP_VERSION % 100,
@@ -75,7 +76,7 @@ void loadSSB(uint8_t bandwidth, bool draw)
 {
   if(!ssbLoaded)
   {
-    if(draw) drawLoadingSSB();
+    if(draw) drawMessage("Loading SSB");
     // You can try rx.setI2CFastModeCustom(700000); or greater value
     rx.setI2CFastModeCustom(400000);
     rx.loadPatch(ssb_patch_content, sizeof(ssb_patch_content), bandwidth);
@@ -117,7 +118,7 @@ bool muteOn(int x)
 
 //
 // Temporarily mute sound on (true) or off (false) if not in a permanent mute state
-// Do not drive PIN_AMP_EN here because a short impulse can trigger amplifier mode D,
+// Do not call this too often because a short PIN_AMP_EN impulse can trigger amplifier mode D,
 // see the NS4160 datasheet https://esp32-si4732.github.io/ats-mini/hardware.html#datasheets
 //
 void tempMuteOn(bool x)
@@ -126,13 +127,15 @@ void tempMuteOn(bool x)
   {
     if(x)
     {
+      digitalWrite(PIN_AMP_EN, LOW);
       rx.setVolume(0);
       rx.setHardwareAudioMute(true);
     }
     else
     {
-      rx.setVolume(volume);
       rx.setHardwareAudioMute(false);
+      rx.setVolume(volume);
+      digitalWrite(PIN_AMP_EN, HIGH);
     }
   }
 }
@@ -254,7 +257,7 @@ void clockReset()
 
 static void formatClock(uint8_t hours, uint8_t minutes)
 {
-  int t = (int)hours * 60 + minutes + getCurrentUTCOffset() * 30;
+  int t = (int)hours * 60 + minutes + getCurrentUTCOffset() * 15;
   t = t < 0? t + 24*60 : t;
   sprintf(clockText, "%02d:%02d", (t / 60) % 24, t % 60);
 }
@@ -318,6 +321,14 @@ bool clockTickTime()
 }
 
 //
+// Check if given frequency belongs to given band
+//
+bool isFreqInBand(const Band *band, uint16_t freq)
+{
+  return((freq>=band->minimumFreq) && (freq<=band->maximumFreq));
+}
+
+//
 // Check if given memory entry belongs to given band
 //
 bool isMemoryInBand(const Band *band, const Memory *memory)
@@ -374,38 +385,4 @@ int getStrength(int rssi)
     if (rssi <= 76) return 16; // S9 +60
     return                 17; //>S9 +60
   }
-}
-
-
-int getInterpolatedStrength(int rssi) {
-  const int am_thresholds[] = {1, 2, 3, 4, 10, 16, 22, 28, 34, 44, 54, 64, 74, 84, 94, 95, 96};
-  const int am_values[] = {1, 4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 37, 40, 43, 46, 49};
-  const int fm_thresholds[] = {1, 2, 8, 14, 24, 34, 44, 54, 64, 74, 76, 77};
-  const int fm_values[] =  {1, 19, 22, 25, 28, 31, 34, 37, 40, 43, 46, 49};
-  int num_thresholds;
-  const int *thresholds;
-  const int *values;
-
-  if(currentMode!=FM) {
-    num_thresholds = ITEM_COUNT(am_thresholds);
-    thresholds = am_thresholds;
-    values = am_values;
-  } else {
-    num_thresholds = ITEM_COUNT(fm_thresholds);
-    thresholds = fm_thresholds;
-    values = fm_values;
-  }
-
-  for (int i = 0; i < num_thresholds; i++) {
-    if (rssi <= thresholds[i]) {
-      if (i == 0) return values[i];
-      int interval = thresholds[i] - thresholds[i-1];
-      if (interval == 0) return values[i];
-      float position = (float)(rssi - thresholds[i-1]) / interval;
-      float interpolated = values[i-1] + position * (values[i] - values[i-1]);
-      return (int)(interpolated + 0.5);
-    }
-  }
-
-  return values[num_thresholds - 1];
 }

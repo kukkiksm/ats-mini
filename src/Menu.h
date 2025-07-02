@@ -40,8 +40,9 @@
 #define CMD_SLEEP     0x2A00 // |
 #define CMD_SLEEPMODE 0x2B00 // |
 #define CMD_LOADEIBI  0x2C00 // |
-#define CMD_WIFIMODE  0x2D00 // |
-#define CMD_ABOUT     0x2E00 //-+
+#define CMD_BLEMODE   0x2D00 // |
+#define CMD_WIFIMODE  0x2E00 // |
+#define CMD_ABOUT     0x2F00 //-+
 
 // UI Layouts
 #define UI_DEFAULT  0
@@ -115,8 +116,8 @@ uint8_t getRDSMode();
 
 int getCurrentUTCOffset();
 int getTotalUTCOffsets();
-const UTCOffset *getUTCOffset(uint8_t idx);
 int getTotalFmRegions();
+int getTotalBleModes();
 
 void doSoftMute(int dir);
 void doAgc(int dir);

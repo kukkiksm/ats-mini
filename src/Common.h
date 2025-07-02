@@ -5,15 +5,15 @@
 #include <TFT_eSPI.h>
 #include <SI4735-fixed.h>
 
-#define RECEIVER_NAME  "ESP32-SI4732 Receiver"
-#define FIRMWARE_NAME  "ATS-Mini"
+#define RECEIVER_DESC  "ESP32-SI4732 Receiver"
+#define RECEIVER_NAME  "ATS-Mini"
 #define FIRMWARE_URL   "https://github.com/esp32-si4732/ats-mini"
 #define MANUAL_URL     "https://esp32-si4732.github.io/ats-mini/manual.html"
 #define AUTHORS_LINE1  "Authors: PU2CLR (Ricardo Caratti),"
 #define AUTHORS_LINE2  "Volos Projects, Ralph Xavier, Sunnygold,"
 #define AUTHORS_LINE3  "Goshante, G8PTN (Dave), R9UCL (Max Arnold),"
 #define AUTHORS_LINE4  "Marat Fayzullin"
-#define APP_VERSION    227  // FIRMWARE VERSION
+#define APP_VERSION    228  // FIRMWARE VERSION
 #define EEPROM_VERSION 71   // EEPROM VERSION (forces reset)
 
 // Modes
@@ -67,6 +67,10 @@
 #define NET_CONNECT    3 // Connect to a network normally, if possible
 #define NET_SYNC       4 // Connect to sync time, then disconnect
 
+// Bluetooth modes
+#define BLE_OFF        0 // Bluetooth is disabled
+#define BLE_BLUEFRUIT  1 // Bluefruit Connect app mode
+
 //
 // Data Types
 //
@@ -100,7 +104,7 @@ typedef struct
 
 typedef struct
 {
-  int8_t offset;          // UTC offset in 30 minute intervals
+  int8_t offset;          // UTC offset in 15 minute intervals
   const char *desc;       // Short description
   const char *city;       // City name
 } UTCOffset;
@@ -149,6 +153,7 @@ extern int8_t SsbAvcIdx;
 extern int8_t AmSoftMuteIdx;
 extern int8_t SsbSoftMuteIdx;
 extern uint8_t rdsModeIdx;
+extern uint8_t bleModeIdx;
 extern uint8_t wifiModeIdx;
 extern uint8_t FmRegionIdx;
 
@@ -167,15 +172,14 @@ bool doSeek(int8_t dir);
 bool clickFreq(bool shortPress);
 uint8_t doAbout(int dir);
 
-// Draw.c
-void drawLoadingSSB();
-void drawZoomedMenu(const char *text);
-void drawScreen(const char *statusLine1 = 0, const char *statusLine2 = 0);
-void drawAboutHelp(uint8_t arrow);
-
 // Battery.c
 float batteryMonitor();
 bool drawBattery(int x, int y);
+
+// Scan.c
+void scanRun(uint16_t centerFreq, uint16_t step);
+float scanGetRSSI(uint16_t freq);
+float scanGetSNR(uint16_t freq);
 
 // Station.c
 const char *getStationName();
@@ -198,7 +202,12 @@ bool ntpSyncTime();
 
 void netRequestConnect();
 void netTickTime();
-void drawWiFiIndicator(int x, int y);
+
+// Ble.cpp
+int bleDoCommand(uint8_t bleModeIdx);
+void bleInit(uint8_t bleMode);
+void bleStop();
+int8_t getBleStatus();
 
 #ifndef DISABLE_REMOTE
 // Remote.c

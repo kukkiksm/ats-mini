@@ -1,8 +1,6 @@
 #ifndef THEMES_H
 #define THEMES_H
 
-#include "Common.h"
-
 // This is our current theme
 #define TH (theme[themeIdx])
 
@@ -23,8 +21,8 @@ typedef struct __attribute__ ((packed))
 
   uint16_t stereo_icon;
 
-  uint16_t wifi_icon;
-  uint16_t wifi_icon_conn;
+  uint16_t rf_icon;
+  uint16_t rf_icon_conn;
 
   uint16_t batt_voltage;
   uint16_t batt_border;
@@ -68,8 +66,6 @@ extern uint8_t themeIdx;
 int getTotalThemes();
 
 extern ColorTheme theme[];
-void setColorTheme();
-void getColorTheme();
 bool switchThemeEditor(int8_t state = 2);
 
 #endif // THEMES_H
