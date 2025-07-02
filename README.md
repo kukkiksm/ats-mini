@@ -1,4 +1,4 @@
-# ATS Mini
+# ATS Mini v.2.28
 
 ![](docs/source/_static/esp32-si4732-ui-theme.jpg)
 
